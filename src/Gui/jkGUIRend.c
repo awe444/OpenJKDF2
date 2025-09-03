@@ -49,6 +49,7 @@ static uint32_t jkGuiRend_mouseLatestMs = 0;
 static HCURSOR jkGuiRend_hCursor = 0;
 
 static int32_t jkGuiRend_CursorVisible = 1;
+static jkGuiRend_WarpFn jkGuiRend_warpCallback = NULL;
 static jkGuiElementHandlers jkGuiRend_elementHandlers[8] = 
 {
     {jkGuiRend_TextButtonEventHandler, jkGuiRend_TextButtonDraw, jkGuiRend_PlayClickSound},
@@ -2865,6 +2866,11 @@ void jkGuiRend_ControllerMouseMove(int dx, int dy)
 
     // Update mouse interaction to trigger hover effects
     jkGuiRend_UpdateMouse();
+    
+    // Warp the OS cursor to match the virtual position if callback is set
+    if (jkGuiRend_warpCallback) {
+        jkGuiRend_warpCallback(jkGuiRend_mouseX, jkGuiRend_mouseY);
+    }
 }
 
 void jkGuiRend_ControllerMouseButton(int down)
@@ -2912,4 +2918,9 @@ void jkGuiRend_ControllerMouseButton(int down)
 #endif
         }
     }
+}
+
+void jkGuiRend_SetWarpCallback(jkGuiRend_WarpFn fn)
+{
+    jkGuiRend_warpCallback = fn;
 }

@@ -1287,6 +1287,9 @@ void Window_RecreateSDL2Window()
     SDL_GL_GetDrawableSize(displayWindow, &Window_xSize, &Window_ySize);
     SDL_GetWindowSize(displayWindow, &Window_screenXSize, &Window_screenYSize);
 
+    // Register cursor warp callback for joystick menu navigation
+    jkGuiRend_SetWarpCallback(Window_WarpCursor);
+
     Window_resized = 1;
 }
 
@@ -1526,6 +1529,19 @@ int Window_ShowCursorUnwindowed(int a1)
 int Window_DefaultHandler(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam, void* unused)
 {
     return 0;
+}
+
+// Warp cursor callback for joystick menu navigation
+void Window_WarpCursor(int x, int y)
+{
+    if (displayWindow) {
+        // Update the Window layer's menu mouse coordinates to stay in sync
+        Window_menu_mouseX = x;
+        Window_menu_mouseY = y;
+        
+        // Warp the OS cursor to the new position
+        SDL_WarpMouseInWindow(displayWindow, x, y);
+    }
 }
 
 int Window_MessageLoop()
