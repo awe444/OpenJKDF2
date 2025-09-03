@@ -98,6 +98,7 @@ build_emcc/*
 JK.h
 out/*
 build_linux64_/*
+build_linux64/*
 build_linux64_flatpak/*
 build_linux_arm64_flatpak/*
 build_linux_x86_64_flatpak/*

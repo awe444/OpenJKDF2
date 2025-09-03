@@ -25,7 +25,8 @@ static uint8_t jkGuiRend_palette[0x300] = {0};
 static WindowDrawHandler_t jkGuiRend_idk2 = 0;
 static WindowDrawHandler_t jkGuiRend_idk = 0;
 static stdSound_buffer_t* jkGuiRend_DsoundHandles[4] = {0};
-static jkGuiMenu *jkGuiRend_activeMenu = NULL;
+static jkGuiMenu *lastActiveMenu = NULL;
+jkGuiMenu *jkGuiRend_activeMenu = NULL;
 static stdVBuffer* jkGuiRend_menuBuffer = NULL;
 static stdVBuffer *jkGuiRend_texture_dword_8561E8 = NULL;
 
@@ -2826,5 +2827,85 @@ void jkGuiRend_UpdateController()
     }
     else if (keyboardShowedLastUpdate) {
         stdControl_HideSystemKeyboard();
+    }
+}
+
+// Controller menu navigation helpers
+void jkGuiRend_ControllerMouseMove(int dx, int dy)
+{
+    // Only process if a menu is active
+    if (!jkGuiRend_activeMenu) {
+        return;
+    }
+
+    // Update mouse position with delta movement, clamping to valid screen bounds
+    jkGuiRend_mouseX += dx;
+    jkGuiRend_mouseY += dy;
+    
+    if (jkGuiRend_mouseX < 0) jkGuiRend_mouseX = 0;
+    if (jkGuiRend_mouseY < 0) jkGuiRend_mouseY = 0;
+    
+    // Clamp to screen dimensions if available
+    if (stdDisplay_pCurVideoMode) {
+        if (jkGuiRend_mouseX >= stdDisplay_pCurVideoMode->format.width) {
+            jkGuiRend_mouseX = stdDisplay_pCurVideoMode->format.width - 1;
+        }
+        if (jkGuiRend_mouseY >= stdDisplay_pCurVideoMode->format.height) {
+            jkGuiRend_mouseY = stdDisplay_pCurVideoMode->format.height - 1;
+        }
+    }
+
+#ifdef JOY_MENU_DEBUG
+    printf("JOY_MENU: Mouse move delta=(%d,%d), new pos=(%d,%d)\n", dx, dy, jkGuiRend_mouseX, jkGuiRend_mouseY);
+#endif
+
+    // Update mouse interaction to trigger hover effects
+    jkGuiRend_UpdateMouse();
+}
+
+void jkGuiRend_ControllerMouseButton(int down)
+{
+    // Only process if a menu is active
+    if (!jkGuiRend_activeMenu) {
+        return;
+    }
+
+#ifdef JOY_MENU_DEBUG
+    printf("JOY_MENU: Mouse button %s\n", down ? "DOWN" : "UP");
+#endif
+
+    if (down) {
+        // Mouse button down: set the down clickable and update visuals
+        jkGuiRend_activeMenu->lastMouseDownClickable = jkGuiRend_activeMenu->lastMouseOverClickable;
+        
+        if (jkGuiRend_activeMenu->lastMouseDownClickable) {
+            // Update visuals to show pressed state
+            jkGuiRend_UpdateAndDrawClickable(jkGuiRend_activeMenu->lastMouseDownClickable, jkGuiRend_activeMenu, 1);
+            
+#ifdef JOY_MENU_DEBUG
+            printf("JOY_MENU: Button pressed on element\n");
+#endif
+        }
+    } else {
+        // Mouse button up: trigger click if still over the same element
+        if (jkGuiRend_activeMenu->lastMouseDownClickable) {
+            if (jkGuiRend_activeMenu->lastMouseDownClickable == jkGuiRend_activeMenu->lastMouseOverClickable) {
+                // Still over the same element, invoke the click
+#ifdef JOY_MENU_DEBUG
+                printf("JOY_MENU: Invoking click on element\n");
+#endif
+                jkGuiRend_InvokeClicked(jkGuiRend_activeMenu->lastMouseOverClickable, jkGuiRend_activeMenu, jkGuiRend_mouseX, jkGuiRend_mouseY, 1);
+            }
+            
+            // Always restore visuals and clear pressed state
+            if (jkGuiRend_activeMenu->lastMouseDownClickable->bIsVisible) {
+                jkGuiRend_UpdateAndDrawClickable(jkGuiRend_activeMenu->lastMouseDownClickable, jkGuiRend_activeMenu, 1);
+            }
+            jkGuiRend_activeMenu->lastMouseDownClickable = 0;
+            
+#ifdef JOY_MENU_DEBUG
+            printf("JOY_MENU: Button released, cleared down state\n");
+#endif
+        }
     }
 }

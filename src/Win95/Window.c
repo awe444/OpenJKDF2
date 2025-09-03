@@ -6,6 +6,7 @@
 #include "Main/jkMain.h"
 #include "Main/jkGame.h"
 #include "Gui/jkGUI.h"
+#include "Gui/jkGUIRend.h"
 #include "Win95/stdDisplay.h"
 #include "World/jkPlayer.h"
 #include "Platform/stdControl.h"
@@ -733,6 +734,51 @@ void Window_SdlUpdate()
             }
             case SDL_JOYDEVICEREMOVED: {
                 stdControl_InitSdlJoysticks();
+                break;
+            }
+
+            case SDL_JOYAXISMOTION: {
+                // Handle joystick axis motion for menu navigation (only in menus)
+                if (jkGuiRend_activeMenu && event.jaxis.which == 0) { // Only first joystick
+                    const int AXIS_THRESHOLD = 8000; // Dead zone threshold
+                    const float SENSITIVITY = 0.1f;  // Mouse movement sensitivity
+                    
+                    if (event.jaxis.axis == 0) { // X axis (left stick horizontal)
+                        if (abs(event.jaxis.value) > AXIS_THRESHOLD) {
+                            int dx = (int)(event.jaxis.value * SENSITIVITY / 32767.0f * 10.0f);
+                            if (dx != 0) {
+                                jkGuiRend_ControllerMouseMove(dx, 0);
+                            }
+                        }
+                    } else if (event.jaxis.axis == 1) { // Y axis (left stick vertical)
+                        if (abs(event.jaxis.value) > AXIS_THRESHOLD) {
+                            int dy = (int)(event.jaxis.value * SENSITIVITY / 32767.0f * 10.0f);
+                            if (dy != 0) {
+                                jkGuiRend_ControllerMouseMove(0, dy);
+                            }
+                        }
+                    }
+                }
+                break;
+            }
+
+            case SDL_JOYBUTTONDOWN: {
+                // Handle joystick button press for menu navigation (only in menus)
+                if (jkGuiRend_activeMenu && event.jbutton.which == 0) { // Only first joystick
+                    if (event.jbutton.button == 0) { // A button (typically button 0)
+                        jkGuiRend_ControllerMouseButton(1); // Button down
+                    }
+                }
+                break;
+            }
+
+            case SDL_JOYBUTTONUP: {
+                // Handle joystick button release for menu navigation (only in menus)
+                if (jkGuiRend_activeMenu && event.jbutton.which == 0) { // Only first joystick
+                    if (event.jbutton.button == 0) { // A button (typically button 0)
+                        jkGuiRend_ControllerMouseButton(0); // Button up
+                    }
+                }
                 break;
             }
 
