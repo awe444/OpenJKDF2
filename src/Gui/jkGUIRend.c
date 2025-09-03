@@ -2869,6 +2869,9 @@ void jkGuiRend_ControllerMouseMove(int dx, int dy)
     
     // Warp the OS cursor to match the virtual position if callback is set
     if (jkGuiRend_warpCallback) {
+#ifdef JOY_MENU_DEBUG
+        printf("JOY_MENU: Calling warp callback to (%d,%d)\n", jkGuiRend_mouseX, jkGuiRend_mouseY);
+#endif
         jkGuiRend_warpCallback(jkGuiRend_mouseX, jkGuiRend_mouseY);
     }
 }
@@ -2923,4 +2926,7 @@ void jkGuiRend_ControllerMouseButton(int down)
 void jkGuiRend_SetWarpCallback(jkGuiRend_WarpFn fn)
 {
     jkGuiRend_warpCallback = fn;
+#ifdef JOY_MENU_DEBUG
+    printf("JOY_MENU: Warp callback registered: %p\n", (void*)fn);
+#endif
 }

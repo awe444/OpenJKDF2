@@ -803,6 +803,9 @@ void stdControl_ReadControls()
     
     // Joystick menu navigation: process left stick movement and A button for GUI menus
     if (stdControl_bHasJoysticks && stdControl_aJoystickExists[0]) {
+#ifdef JOY_MENU_DEBUG
+        printf("JOY_MENU: Processing joystick input\n");
+#endif
         // Left stick movement for menu cursor
         float nx = 0.0f, ny = 0.0f;
         
@@ -810,6 +813,10 @@ void stdControl_ReadControls()
         if (stdControl_aAxisEnabled[0]) {
             int rawX = stdControl_aAxisPos[AXIS_JOY1_X];
             int rawY = stdControl_aAxisPos[AXIS_JOY1_Y];
+            
+#ifdef JOY_MENU_DEBUG
+            printf("JOY_MENU: Raw joystick values: X=%d, Y=%d\n", rawX, rawY);
+#endif
             
             // Normalize to [-1, 1] range (SDL joystick range is typically -32768 to 32767)
             nx = rawX / 32768.0f;
@@ -820,6 +827,10 @@ void stdControl_ReadControls()
             if (fabs(nx) < deadzone) nx = 0.0f;
             if (fabs(ny) < deadzone) ny = 0.0f;
             
+#ifdef JOY_MENU_DEBUG
+            printf("JOY_MENU: Normalized values after deadzone: X=%.3f, Y=%.3f\n", nx, ny);
+#endif
+            
             // Convert to pixel deltas
             if (nx != 0.0f || ny != 0.0f) {
                 float speedPxPerSec = 1100.0f;
@@ -827,6 +838,10 @@ void stdControl_ReadControls()
                 
                 int mdx = (int)(nx * speedPxPerSec * dt);
                 int mdy = (int)(ny * speedPxPerSec * dt);
+                
+#ifdef JOY_MENU_DEBUG
+                printf("JOY_MENU: Movement deltas: dx=%d, dy=%d (dt=%.3f)\n", mdx, mdy, dt);
+#endif
                 
                 if (mdx != 0 || mdy != 0) {
                     jkGuiRend_ControllerMouseMove(mdx, mdy);

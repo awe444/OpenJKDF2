@@ -1537,6 +1537,9 @@ int Window_DefaultHandler(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam, voi
 // Warp cursor callback for joystick menu navigation
 void Window_WarpCursor(int x, int y)
 {
+#ifdef JOY_MENU_DEBUG
+    printf("JOY_MENU: Window_WarpCursor called with (%d,%d), displayWindow=%p\n", x, y, (void*)displayWindow);
+#endif
     if (displayWindow) {
         // Update the Window layer's menu mouse coordinates to stay in sync
         Window_menu_mouseX = x;
@@ -1544,6 +1547,9 @@ void Window_WarpCursor(int x, int y)
         
         // Warp the OS cursor to the new position
         SDL_WarpMouseInWindow(displayWindow, x, y);
+#ifdef JOY_MENU_DEBUG
+        printf("JOY_MENU: SDL_WarpMouseInWindow called\n");
+#endif
     }
 }
 
