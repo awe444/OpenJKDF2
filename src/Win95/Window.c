@@ -25,6 +25,7 @@
 
 #include <fcntl.h> 
 #include <stdio.h>
+#include <stdlib.h>
 #ifndef _WIN32
 #include <unistd.h>
 #endif //!_WIN32
@@ -741,18 +742,18 @@ void Window_SdlUpdate()
                 // Handle joystick axis motion for menu navigation (only in menus)
                 if (jkGuiRend_activeMenu && event.jaxis.which == 0) { // Only first joystick
                     const int AXIS_THRESHOLD = 8000; // Dead zone threshold
-                    const float SENSITIVITY = 0.1f;  // Mouse movement sensitivity
+                    const float SENSITIVITY = 5.0f;  // Mouse movement sensitivity
                     
                     if (event.jaxis.axis == 0) { // X axis (left stick horizontal)
                         if (abs(event.jaxis.value) > AXIS_THRESHOLD) {
-                            int dx = (int)(event.jaxis.value * SENSITIVITY / 32767.0f * 10.0f);
+                            int dx = (int)(event.jaxis.value * SENSITIVITY / 32767.0f);
                             if (dx != 0) {
                                 jkGuiRend_ControllerMouseMove(dx, 0);
                             }
                         }
                     } else if (event.jaxis.axis == 1) { // Y axis (left stick vertical)
                         if (abs(event.jaxis.value) > AXIS_THRESHOLD) {
-                            int dy = (int)(event.jaxis.value * SENSITIVITY / 32767.0f * 10.0f);
+                            int dy = (int)(event.jaxis.value * SENSITIVITY / 32767.0f);
                             if (dy != 0) {
                                 jkGuiRend_ControllerMouseMove(0, dy);
                             }

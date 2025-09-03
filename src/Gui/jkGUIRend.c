@@ -2846,13 +2846,17 @@ void jkGuiRend_ControllerMouseMove(int dx, int dy)
     if (jkGuiRend_mouseY < 0) jkGuiRend_mouseY = 0;
     
     // Clamp to screen dimensions if available
-    if (stdDisplay_pCurVideoMode) {
-        if (jkGuiRend_mouseX >= stdDisplay_pCurVideoMode->format.width) {
-            jkGuiRend_mouseX = stdDisplay_pCurVideoMode->format.width - 1;
+    if (stdDisplay_pCurVideoMode && stdDisplay_pCurVideoMode->format.width > 0 && stdDisplay_pCurVideoMode->format.height > 0) {
+        if (jkGuiRend_mouseX >= (int)stdDisplay_pCurVideoMode->format.width) {
+            jkGuiRend_mouseX = (int)stdDisplay_pCurVideoMode->format.width - 1;
         }
-        if (jkGuiRend_mouseY >= stdDisplay_pCurVideoMode->format.height) {
-            jkGuiRend_mouseY = stdDisplay_pCurVideoMode->format.height - 1;
+        if (jkGuiRend_mouseY >= (int)stdDisplay_pCurVideoMode->format.height) {
+            jkGuiRend_mouseY = (int)stdDisplay_pCurVideoMode->format.height - 1;
         }
+    } else {
+        // Fallback to reasonable default bounds if video mode not available
+        if (jkGuiRend_mouseX >= 640) jkGuiRend_mouseX = 639;
+        if (jkGuiRend_mouseY >= 480) jkGuiRend_mouseY = 479;
     }
 
 #ifdef JOY_MENU_DEBUG
