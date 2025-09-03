@@ -1287,6 +1287,9 @@ void Window_RecreateSDL2Window()
     SDL_GL_GetDrawableSize(displayWindow, &Window_xSize, &Window_ySize);
     SDL_GetWindowSize(displayWindow, &Window_screenXSize, &Window_screenYSize);
 
+    // Forward declaration for cursor warp callback
+    void Window_WarpCursor(int x, int y);
+    
     // Register cursor warp callback for joystick menu navigation
     jkGuiRend_SetWarpCallback(Window_WarpCursor);
 
