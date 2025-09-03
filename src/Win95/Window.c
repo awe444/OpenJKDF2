@@ -1538,15 +1538,41 @@ int Window_DefaultHandler(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam, voi
 void Window_WarpCursor(int x, int y)
 {
 #ifdef JOY_MENU_DEBUG
-    printf("JOY_MENU: Window_WarpCursor called with (%d,%d), displayWindow=%p\n", x, y, (void*)displayWindow);
+    printf("JOY_MENU: Window_WarpCursor called with logical coords (%d,%d), displayWindow=%p\n", x, y, (void*)displayWindow);
 #endif
     if (displayWindow) {
         // Update the Window layer's menu mouse coordinates to stay in sync
         Window_menu_mouseX = x;
         Window_menu_mouseY = y;
         
-        // Warp the OS cursor to the new position
-        SDL_WarpMouseInWindow(displayWindow, x, y);
+        // Transform from 640x480 logical coordinates to screen pixel coordinates
+        // This matches the inverse of the transformation in Window_HandleMouseMove()
+        int screenX, screenY;
+        
+        if (!jkGame_isDDraw) {
+            // Same transformation logic as in Window_HandleMouseMove, but reversed
+            flex_t menu_x = ((flex_t)Window_screenXSize - ((flex_t)Window_screenYSize * (640.0 / 480.0))) / 2.0;
+            flex_t menu_w = ((flex_t)Window_screenYSize * (640.0 / 480.0));
+            
+            // Reverse: Window_mouseX = (int)(((fX - menu_x) / (flex_t)menu_w) * 640.0);
+            // So: fX = (Window_mouseX / 640.0) * menu_w + menu_x
+            screenX = (int)((x / 640.0) * menu_w + menu_x);
+            
+            // Reverse: Window_mouseY = (int)((fY / (flex_t)Window_screenYSize) * 480.0);
+            // So: fY = (Window_mouseY / 480.0) * Window_screenYSize
+            screenY = (int)((y / 480.0) * Window_screenYSize);
+        } else {
+            // In non-windowed mode, coordinates might be 1:1
+            screenX = x;
+            screenY = y;
+        }
+        
+#ifdef JOY_MENU_DEBUG
+        printf("JOY_MENU: Transformed to screen coords (%d,%d)\n", screenX, screenY);
+#endif
+        
+        // Warp the OS cursor to the transformed screen coordinates
+        SDL_WarpMouseInWindow(displayWindow, screenX, screenY);
 #ifdef JOY_MENU_DEBUG
         printf("JOY_MENU: SDL_WarpMouseInWindow called\n");
 #endif
