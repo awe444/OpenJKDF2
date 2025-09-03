@@ -6,8 +6,10 @@
 #include "Main/jkQuakeConsole.h"
 
 #include <SDL.h>
+#include <math.h>
 
 #include "jk.h"
+#include "Gui/jkGUIRend.h"
 
 const uint8_t stdControl_aSdlToDik[256] =
 {
@@ -798,6 +800,50 @@ void stdControl_ReadControls()
             stdControl_SetKeydown((JK_JOYSTICK_BUTTON_STRIDE*i) + KEY_JOY1_HDOWN, !!(hatState & SDL_HAT_DOWN) /* button val */, stdControl_curReadTime);
         }
     }
+    
+    // Joystick menu navigation: process left stick movement and A button for GUI menus
+    if (stdControl_bHasJoysticks && stdControl_aJoystickExists[0]) {
+        // Left stick movement for menu cursor
+        float nx = 0.0f, ny = 0.0f;
+        
+        // Get left stick axis values and normalize
+        if (stdControl_aAxisEnabled[0]) {
+            int rawX = stdControl_aAxisPos[AXIS_JOY1_X];
+            int rawY = stdControl_aAxisPos[AXIS_JOY1_Y];
+            
+            // Normalize to [-1, 1] range (SDL joystick range is typically -32768 to 32767)
+            nx = rawX / 32768.0f;
+            ny = rawY / 32768.0f;
+            
+            // Apply deadzone
+            float deadzone = 0.18f;
+            if (fabs(nx) < deadzone) nx = 0.0f;
+            if (fabs(ny) < deadzone) ny = 0.0f;
+            
+            // Convert to pixel deltas
+            if (nx != 0.0f || ny != 0.0f) {
+                float speedPxPerSec = 1100.0f;
+                float dt = stdControl_msDelta / 1000.0f;
+                
+                int mdx = (int)(nx * speedPxPerSec * dt);
+                int mdy = (int)(ny * speedPxPerSec * dt);
+                
+                if (mdx != 0 || mdy != 0) {
+                    jkGuiRend_ControllerMouseMove(mdx, mdy);
+                }
+            }
+        }
+        
+        // A button (KEY_JOY1_B1) for menu clicking
+        static int prevAButtonState = 0;
+        int currentAButtonState = stdControl_aKeyInfo[KEY_JOY1_B1] != 0;
+        
+        if (currentAButtonState != prevAButtonState) {
+            jkGuiRend_ControllerMouseButton(currentAButtonState);
+            prevAButtonState = currentAButtonState;
+        }
+    }
+    
     stdControl_ReadMouse();
     stdControl_msLast = stdControl_curReadTime;
 }
