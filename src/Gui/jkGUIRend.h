@@ -167,4 +167,10 @@ void jkGuiRend_UpdateController();
 void jkGuiRend_ControllerMouseMove(int dx, int dy);
 void jkGuiRend_ControllerMouseButton(int down);
 
+// OS-cursor sync: platform warp callback registration
+// x and y are in menu coordinate space (typically 640x480 logical),
+// the platform implementation should translate to window pixel coordinates if needed.
+typedef void (*jkGuiRend_WarpFn)(int x, int y);
+void jkGuiRend_SetWarpCallback(jkGuiRend_WarpFn fn);
+
 #endif // _JKGUIREND_H
