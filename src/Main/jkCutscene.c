@@ -605,6 +605,15 @@ int jkCutscene_smack_related_loops()
     if ( !jkCutscene_isRendering )
         return 1;
     
+    // Debug: Print that this function is being called during cutscenes
+    static int debugCallCount = 0;
+    debugCallCount++;
+    if (debugCallCount % 60 == 1) { // Print every ~1 second (assuming 60fps)
+        printf("DEBUG_CUTSCENE: jkCutscene_smack_related_loops() called (count=%d)\n", debugCallCount);
+        printf("DEBUG_CUTSCENE: Joystick state - bHasJoysticks=%d, aJoystickExists[0]=%d\n", 
+               stdControl_bHasJoysticks, stdControl_aJoystickExists[0]);
+    }
+    
     // Check for joystick A button press during cutscenes/videos to simulate ESC key
     static int prevAButtonState = 0;
     int currentAButtonState = 0;
@@ -613,17 +622,26 @@ int jkCutscene_smack_related_loops()
         stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
         currentAButtonState = aButtonVal != 0;
         
+        // Debug output for A button raw state every few frames
+        if (debugCallCount % 30 == 1) { // Print every ~0.5 seconds
+            printf("DEBUG_CUTSCENE: A button raw state - aButtonVal=%d, currentState=%d\n", aButtonVal, currentAButtonState);
+        }
+        
         // Debug output for A button state changes
         if (currentAButtonState != prevAButtonState) {
-            printf("DEBUG_ESC_CUTSCENE: A button state changed: %d -> %d (in cutscene)\n", prevAButtonState, currentAButtonState);
+            printf("DEBUG_CUTSCENE: A button state changed: %d -> %d (in cutscene)\n", prevAButtonState, currentAButtonState);
             
             if (currentAButtonState) {
                 // A button pressed - simulate ESC key to exit cutscene
-                printf("DEBUG_ESC_CUTSCENE: A button pressed, ending cutscene\n");
+                printf("DEBUG_CUTSCENE: A button pressed, ending cutscene via jkCutscene_sub_421410()\n");
                 return jkCutscene_sub_421410();
             }
         }
         prevAButtonState = currentAButtonState;
+    } else {
+        if (debugCallCount % 60 == 1) {
+            printf("DEBUG_CUTSCENE: No joystick available for A button ESC\n");
+        }
     }
     
     if ( !jkCutscene_55AA54 && g_app_suspended )
