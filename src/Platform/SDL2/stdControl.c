@@ -13,6 +13,9 @@
 #include "jk.h"
 #include "Gui/jkGUIRend.h"
 
+// External array declarations for input handling
+extern int stdControl_aInput2[JK_NUM_KEYS];
+
 const uint8_t stdControl_aSdlToDik[256] =
 {
     0,
@@ -844,13 +847,15 @@ void stdControl_ReadControls()
         
         // A button (KEY_JOY1_B1) for menu clicking and cutscene escape
         static int prevAButtonState = 0;
-        int currentAButtonState = stdControl_aKeyInfo[KEY_JOY1_B1] != 0;
+        int aButtonVal = 0;
+        stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
+        int currentAButtonState = aButtonVal != 0;
         
         // Debug: Show joystick input handling is running and A button raw state periodically
         static int debugCounter = 0;
         if (++debugCounter % 60 == 0) { // Every ~1 second at 60fps
-            printf("DEBUG_ESC: Joystick input handling running - A button raw state: %d (KEY_JOY1_B1 = %d, array value = %d)\n", 
-                   currentAButtonState, KEY_JOY1_B1, stdControl_aKeyInfo[KEY_JOY1_B1]);
+            printf("DEBUG_ESC: Joystick input handling running - A button raw state: %d (KEY_JOY1_B1 = %d, aKeyInfo = %d, aInput2 = %d)\n", 
+                   currentAButtonState, KEY_JOY1_B1, stdControl_aKeyInfo[KEY_JOY1_B1], aButtonVal);
         }
         
         if (currentAButtonState != prevAButtonState) {
@@ -903,6 +908,11 @@ void stdControl_ReadControls()
                     stdControl_SetKeydown(DIK_ESCAPE, 0, stdControl_curReadTime);
                     printf("DEBUG_ESC: ESC key state after clearing: %d\n", stdControl_aKeyInfo[DIK_ESCAPE]);
                 }
+                
+                // Prevent GUI code from also processing this A button press
+                printf("DEBUG_ESC: Clearing A button state to prevent GUI interference\n");
+                stdControl_aKeyInfo[KEY_JOY1_B1] = 0;
+                stdControl_aInput2[KEY_JOY1_B1] = 0;
             } else {
                 printf("DEBUG_ESC: In menu mode - using mouse click\n");
                 // In menu mode: A button acts like mouse click
