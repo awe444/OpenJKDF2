@@ -173,4 +173,8 @@ void jkGuiRend_ControllerMouseButton(int down);
 typedef void (*jkGuiRend_WarpFn)(int x, int y);
 void jkGuiRend_SetWarpCallback(jkGuiRend_WarpFn fn);
 
+// Custom cursor rendering for Wayland compatibility
+void jkGuiRend_DrawCustomCursor(jkGuiMenu *menu);
+void jkGuiRend_EnableCustomCursor(int enable);
+
 #endif // _JKGUIREND_H

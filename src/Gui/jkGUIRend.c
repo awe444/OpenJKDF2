@@ -50,6 +50,7 @@ static HCURSOR jkGuiRend_hCursor = 0;
 
 static int32_t jkGuiRend_CursorVisible = 1;
 static jkGuiRend_WarpFn jkGuiRend_warpCallback = NULL;
+static int jkGuiRend_customCursorEnabled = 0; // Flag to enable custom cursor rendering
 static jkGuiElementHandlers jkGuiRend_elementHandlers[8] = 
 {
     {jkGuiRend_TextButtonEventHandler, jkGuiRend_TextButtonDraw, jkGuiRend_PlayClickSound},
@@ -292,6 +293,9 @@ void jkGuiRend_Paint(jkGuiMenu *menu)
     menu->focusedElement = lastFocused;
     menu->lastMouseDownClickable = lastDown;
 #endif
+    
+    // Draw custom cursor after all GUI elements but before final display
+    jkGuiRend_DrawCustomCursor(menu);
     
     jkGuiRend_FlipAndDraw(menu, 0);
 
@@ -2921,6 +2925,58 @@ void jkGuiRend_ControllerMouseButton(int down)
 #endif
         }
     }
+}
+
+void jkGuiRend_DrawCustomCursor(jkGuiMenu *menu)
+{
+    // Only draw custom cursor if enabled and menu is active
+    if (!jkGuiRend_customCursorEnabled || !menu || !jkGuiRend_menuBuffer) {
+        return;
+    }
+
+#ifdef JOY_MENU_DEBUG
+    printf("JOY_MENU: Drawing custom cursor at (%d,%d)\n", jkGuiRend_mouseX, jkGuiRend_mouseY);
+#endif
+
+    // Create a red filled rectangle (8x8 pixels) at the current virtual cursor position
+    rdRect cursorRect;
+    cursorRect.x = jkGuiRend_mouseX;
+    cursorRect.y = jkGuiRend_mouseY;
+    cursorRect.width = 8;
+    cursorRect.height = 8;
+
+    // Clamp cursor to screen bounds to prevent rendering outside valid area
+    if (stdDisplay_pCurVideoMode && stdDisplay_pCurVideoMode->format.width > 0 && stdDisplay_pCurVideoMode->format.height > 0) {
+        if (cursorRect.x + cursorRect.width > (int)stdDisplay_pCurVideoMode->format.width) {
+            cursorRect.width = (int)stdDisplay_pCurVideoMode->format.width - cursorRect.x;
+        }
+        if (cursorRect.y + cursorRect.height > (int)stdDisplay_pCurVideoMode->format.height) {
+            cursorRect.height = (int)stdDisplay_pCurVideoMode->format.height - cursorRect.y;
+        }
+    } else {
+        // Fallback to 640x480 bounds
+        if (cursorRect.x + cursorRect.width > 640) {
+            cursorRect.width = 640 - cursorRect.x;
+        }
+        if (cursorRect.y + cursorRect.height > 480) {
+            cursorRect.height = 480 - cursorRect.y;
+        }
+    }
+
+    // Only draw if we have a valid rectangle
+    if (cursorRect.width > 0 && cursorRect.height > 0) {
+        // Use a bright red color (palette index 255 is commonly red/bright)
+        int16_t redColor = 255;
+        jkGuiRend_DrawRect(jkGuiRend_menuBuffer, &cursorRect, redColor);
+    }
+}
+
+void jkGuiRend_EnableCustomCursor(int enable)
+{
+    jkGuiRend_customCursorEnabled = enable;
+#ifdef JOY_MENU_DEBUG
+    printf("JOY_MENU: Custom cursor rendering %s\n", enable ? "ENABLED" : "DISABLED");
+#endif
 }
 
 void jkGuiRend_SetWarpCallback(jkGuiRend_WarpFn fn)

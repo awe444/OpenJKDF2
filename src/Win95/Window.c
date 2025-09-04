@@ -1746,7 +1746,11 @@ void Window_WarpCursor(int x, int y)
                 printf("JOY_MENU: All Wayland cursor warp approaches failed\n");
                 printf("JOY_MENU: This is expected behavior due to Wayland security restrictions\n");
                 printf("JOY_MENU: Virtual GUI cursor will work correctly even though OS cursor doesn't move\n");
+                printf("JOY_MENU: Enabling custom rendered cursor for visual feedback\n");
 #endif
+                // Enable custom cursor rendering since OS cursor warping is blocked
+                jkGuiRend_EnableCustomCursor(1);
+                
                 // Generate synthetic mouse motion event to keep virtual cursor in sync
                 SDL_Event synthetic;
                 synthetic.type = SDL_MOUSEMOTION;
@@ -1761,10 +1765,16 @@ void Window_WarpCursor(int x, int y)
 #ifdef JOY_MENU_DEBUG
                 printf("JOY_MENU: Generated synthetic mouse motion event to (%d,%d)\n", screenX, screenY);
 #endif
+            } else {
+                // Cursor warping succeeded, disable custom cursor
+                jkGuiRend_EnableCustomCursor(0);
             }
             
         } else {
             // Non-Wayland systems (X11, KMS, etc.) - use standard approach
+            // Disable custom cursor since OS cursor warping should work
+            jkGuiRend_EnableCustomCursor(0);
+            
 #ifdef JOY_MENU_DEBUG
             printf("JOY_MENU: Used standard SDL_WarpMouseInWindow for non-Wayland\n");
 #endif
