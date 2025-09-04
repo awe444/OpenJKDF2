@@ -4,6 +4,8 @@
 #include "Win95/Window.h"
 #include "stdPlatform.h"
 #include "Main/jkQuakeConsole.h"
+#include "Main/jkSmack.h"
+#include "Main/jkMain.h"
 
 #include <SDL.h>
 #include <math.h>
@@ -849,12 +851,35 @@ void stdControl_ReadControls()
             }
         }
         
-        // A button (KEY_JOY1_B1) for menu clicking
+        // A button (KEY_JOY1_B1) for menu clicking and cutscene escape
         static int prevAButtonState = 0;
         int currentAButtonState = stdControl_aKeyInfo[KEY_JOY1_B1] != 0;
         
         if (currentAButtonState != prevAButtonState) {
-            jkGuiRend_ControllerMouseButton(currentAButtonState);
+            // Check if we're in a cutscene or video mode where A button should act like ESC
+            int currentGuiState = jkSmack_GetCurrentGuiState();
+            if (currentGuiState == JK_GAMEMODE_VIDEO || 
+                currentGuiState == JK_GAMEMODE_VIDEO2 || 
+                currentGuiState == JK_GAMEMODE_VIDEO3 || 
+                currentGuiState == JK_GAMEMODE_VIDEO4 || 
+                currentGuiState == JK_GAMEMODE_CUTSCENE || 
+                currentGuiState == JK_GAMEMODE_MOTS_CUTSCENE) {
+                
+                // In cutscene/video mode: A button acts like ESC key
+                if (currentAButtonState) { // Button pressed
+#ifdef JOY_MENU_DEBUG
+                    printf("JOY_MENU: A button pressed in cutscene/video mode - simulating ESC key\n");
+#endif
+                    // Simulate ESC key press by setting the key state
+                    stdControl_SetKeydown(KEY_ESCAPE, 1, stdControl_curReadTime);
+                } else { // Button released
+                    // Simulate ESC key release
+                    stdControl_SetKeydown(KEY_ESCAPE, 0, stdControl_curReadTime);
+                }
+            } else {
+                // In menu mode: A button acts like mouse click
+                jkGuiRend_ControllerMouseButton(currentAButtonState);
+            }
             prevAButtonState = currentAButtonState;
         }
     }

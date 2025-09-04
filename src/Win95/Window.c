@@ -1596,160 +1596,34 @@ void Window_WarpCursor(int x, int y)
         // Try cursor warping - for Wayland this may fail due to compositor restrictions
         if (videoDriver && strcmp(videoDriver, "wayland") == 0) {
 #ifdef JOY_MENU_DEBUG
-            printf("JOY_MENU: Detected Wayland - trying enhanced cursor warp approaches\n");
+            printf("JOY_MENU: Detected Wayland - attempting cursor warp\n");
 #endif
+            // Attempt simple cursor warping for Wayland
+            SDL_WarpMouseInWindow(displayWindow, screenX, screenY);
             
-            int warpSuccess = 0;
-            Uint32 windowFlags = SDL_GetWindowFlags(displayWindow);
+            // Check if warping succeeded
+            SDL_PumpEvents();
+            int mouseX_after, mouseY_after;
+            SDL_GetMouseState(&mouseX_after, &mouseY_after);
             
+            if (abs(mouseX_after - screenX) <= 3 && abs(mouseY_after - screenY) <= 3) {
+                // Cursor warping succeeded, disable custom cursor
+                jkGuiRend_EnableCustomCursor(0);
 #ifdef JOY_MENU_DEBUG
-            printf("JOY_MENU: Window flags: 0x%x (focus=%s, grab=%s)\n", 
-                   windowFlags,
-                   (windowFlags & SDL_WINDOW_INPUT_FOCUS) ? "yes" : "no",
-                   (windowFlags & SDL_WINDOW_MOUSE_GRABBED) ? "yes" : "no");
+                printf("JOY_MENU: Wayland cursor warp succeeded: (%d,%d) -> (%d,%d)\n", 
+                       mouseX_before, mouseY_before, mouseX_after, mouseY_after);
 #endif
-
-            // Approach 1: Try SDL_CaptureMouse with enhanced window manipulation
-            if (windowFlags & SDL_WINDOW_INPUT_FOCUS) {
-#ifdef JOY_MENU_DEBUG
-                printf("JOY_MENU: Trying SDL_CaptureMouse approach\n");
-#endif
-                // Raise window and ensure it has focus
-                SDL_RaiseWindow(displayWindow);
-                SDL_SetWindowInputFocus(displayWindow);
-                
-                // Capture mouse to this window
-                if (SDL_CaptureMouse(SDL_TRUE) == 0) {
-                    SDL_WarpMouseInWindow(displayWindow, screenX, screenY);
-                    SDL_CaptureMouse(SDL_FALSE);
-                    
-                    // Check if this approach worked
-                    SDL_PumpEvents();
-                    int mouseX_after, mouseY_after;
-                    SDL_GetMouseState(&mouseX_after, &mouseY_after);
-                    
-                    if (abs(mouseX_after - screenX) <= 3 && abs(mouseY_after - screenY) <= 3) {
-                        warpSuccess = 1;
-#ifdef JOY_MENU_DEBUG
-                        printf("JOY_MENU: SDL_CaptureMouse warp succeeded: (%d,%d) -> (%d,%d)\n", 
-                               mouseX_before, mouseY_before, mouseX_after, mouseY_after);
-#endif
-                    } else {
-#ifdef JOY_MENU_DEBUG
-                        printf("JOY_MENU: SDL_CaptureMouse warp failed: expected (%d,%d), got (%d,%d)\n", 
-                               screenX, screenY, mouseX_after, mouseY_after);
-#endif
-                    }
-                } else {
-#ifdef JOY_MENU_DEBUG
-                    printf("JOY_MENU: SDL_CaptureMouse failed to capture\n");
-#endif
-                }
-            }
-            
-            // Approach 2: Try with drawable coordinates instead of screen coordinates
-            if (!warpSuccess) {
-#ifdef JOY_MENU_DEBUG
-                printf("JOY_MENU: Trying drawable coordinate system\n");
-#endif
-                // Try using drawable coordinates which might work better with some compositors
-                int drawableX = (int)((x / 640.0) * Window_xSize);
-                int drawableY = (int)((y / 480.0) * Window_ySize);
-                
-                // Clamp to drawable bounds
-                if (drawableX < 0) drawableX = 0;
-                if (drawableY < 0) drawableY = 0;
-                if (drawableX >= Window_xSize) drawableX = Window_xSize - 1;
-                if (drawableY >= Window_ySize) drawableY = Window_ySize - 1;
+            } else {
+                // Wayland cursor warping failed due to compositor restrictions
+                // Enable custom cursor rendering for visual feedback
+                jkGuiRend_EnableCustomCursor(1);
                 
 #ifdef JOY_MENU_DEBUG
-                printf("JOY_MENU: Using drawable coords (%d,%d) instead of screen coords\n", drawableX, drawableY);
-#endif
-                
-                SDL_SetWindowGrab(displayWindow, SDL_TRUE);
-                SDL_WarpMouseInWindow(displayWindow, drawableX, drawableY);
-                SDL_SetWindowGrab(displayWindow, SDL_FALSE);
-                
-                SDL_PumpEvents();
-                int mouseX_after, mouseY_after;
-                SDL_GetMouseState(&mouseX_after, &mouseY_after);
-                
-                if (abs(mouseX_after - drawableX) <= 3 && abs(mouseY_after - drawableY) <= 3) {
-                    warpSuccess = 1;
-#ifdef JOY_MENU_DEBUG
-                    printf("JOY_MENU: Drawable coordinate warp succeeded: (%d,%d)\n", mouseX_after, mouseY_after);
-#endif
-                } else {
-#ifdef JOY_MENU_DEBUG
-                    printf("JOY_MENU: Drawable coordinate warp failed: expected (%d,%d), got (%d,%d)\n", 
-                           drawableX, drawableY, mouseX_after, mouseY_after);
-#endif
-                }
-            }
-            
-            // Approach 3: Try fullscreen mode detection and alternative warping
-            if (!warpSuccess) {
-#ifdef JOY_MENU_DEBUG
-                printf("JOY_MENU: Trying fullscreen-aware warping\n");
-#endif
-                
-                // In fullscreen mode, try direct coordinate warping
-                if (windowFlags & SDL_WINDOW_FULLSCREEN || windowFlags & SDL_WINDOW_FULLSCREEN_DESKTOP) {
-#ifdef JOY_MENU_DEBUG
-                    printf("JOY_MENU: Detected fullscreen mode, trying direct coordinate warp\n");
-#endif
-                    // Use original logical coordinates in fullscreen
-                    SDL_WarpMouseInWindow(displayWindow, x, y);
-                } else {
-                    // Try global warping with window offset
-                    int windowX, windowY;
-                    SDL_GetWindowPosition(displayWindow, &windowX, &windowY);
-                    
-                    if (windowX != SDL_WINDOWPOS_UNDEFINED && windowY != SDL_WINDOWPOS_UNDEFINED) {
-                        int globalX = windowX + screenX;
-                        int globalY = windowY + screenY;
-                        
-#ifdef JOY_MENU_DEBUG
-                        printf("JOY_MENU: Attempting global warp to (%d,%d) from window pos (%d,%d)\n", 
-                               globalX, globalY, windowX, windowY);
-#endif
-                        SDL_WarpMouseGlobal(globalX, globalY);
-                    } else {
-#ifdef JOY_MENU_DEBUG
-                        printf("JOY_MENU: Window position undefined, using standard warp\n");
-#endif
-                        SDL_WarpMouseInWindow(displayWindow, screenX, screenY);
-                    }
-                }
-                
-                SDL_PumpEvents();
-                int mouseX_after, mouseY_after;
-                SDL_GetMouseState(&mouseX_after, &mouseY_after);
-                
-                // Be more lenient with success detection for this approach
-                if (abs(mouseX_after - mouseX_before) > 0 || abs(mouseY_after - mouseY_before) > 0) {
-                    warpSuccess = 1;
-#ifdef JOY_MENU_DEBUG
-                    printf("JOY_MENU: Fullscreen-aware warp moved cursor: (%d,%d) -> (%d,%d)\n", 
-                           mouseX_before, mouseY_before, mouseX_after, mouseY_after);
-#endif
-                } else {
-#ifdef JOY_MENU_DEBUG
-                    printf("JOY_MENU: Fullscreen-aware warp failed: no movement detected\n");
-#endif
-                }
-            }
-            
-            // Final fallback: Generate synthetic events and accept OS cursor limitation
-            if (!warpSuccess) {
-#ifdef JOY_MENU_DEBUG
-                printf("JOY_MENU: All Wayland cursor warp approaches failed\n");
+                printf("JOY_MENU: Wayland cursor warp failed: expected (%d,%d), got (%d,%d)\n", 
+                       screenX, screenY, mouseX_after, mouseY_after);
                 printf("JOY_MENU: This is expected behavior due to Wayland security restrictions\n");
-                printf("JOY_MENU: Virtual GUI cursor will work correctly even though OS cursor doesn't move\n");
                 printf("JOY_MENU: Enabling custom rendered cursor for visual feedback\n");
 #endif
-                // Enable custom cursor rendering since OS cursor warping is blocked
-                jkGuiRend_EnableCustomCursor(1);
                 
                 // Generate synthetic mouse motion event to keep virtual cursor in sync
                 SDL_Event synthetic;
@@ -1762,14 +1636,11 @@ void Window_WarpCursor(int x, int y)
                 synthetic.motion.xrel = screenX - mouseX_before;
                 synthetic.motion.yrel = screenY - mouseY_before;
                 SDL_PushEvent(&synthetic);
+                
 #ifdef JOY_MENU_DEBUG
                 printf("JOY_MENU: Generated synthetic mouse motion event to (%d,%d)\n", screenX, screenY);
 #endif
-            } else {
-                // Cursor warping succeeded, disable custom cursor
-                jkGuiRend_EnableCustomCursor(0);
             }
-            
         } else {
             // Non-Wayland systems (X11, KMS, etc.) - use standard approach
             // Disable custom cursor since OS cursor warping should work
@@ -1780,16 +1651,7 @@ void Window_WarpCursor(int x, int y)
 #endif
             SDL_WarpMouseInWindow(displayWindow, screenX, screenY);
             
-#ifdef JOY_MENU_DEBUG
-            // Verify warp worked for non-Wayland systems too
-            SDL_PumpEvents();
-            int mouseX_after, mouseY_after;
-            SDL_GetMouseState(&mouseX_after, &mouseY_after);
-            
-            printf("JOY_MENU: Non-Wayland warp: (%d,%d) -> (%d,%d), target was (%d,%d)\n", 
-                   mouseX_before, mouseY_before, mouseX_after, mouseY_after, screenX, screenY);
-            
-            // Always push synthetic event to ensure consistency across all backends
+            // Generate synthetic event for consistency
             SDL_Event synthetic;
             synthetic.type = SDL_MOUSEMOTION;
             synthetic.motion.windowID = SDL_GetWindowID(displayWindow);
@@ -1800,6 +1662,8 @@ void Window_WarpCursor(int x, int y)
             synthetic.motion.xrel = screenX - mouseX_before;
             synthetic.motion.yrel = screenY - mouseY_before;
             SDL_PushEvent(&synthetic);
+            
+#ifdef JOY_MENU_DEBUG
             printf("JOY_MENU: Pushed synthetic mouse motion event (%d,%d)\n", screenX, screenY);
 #endif
         }
