@@ -1545,6 +1545,12 @@ void Window_WarpCursor(int x, int y)
         Window_menu_mouseX = x;
         Window_menu_mouseY = y;
         
+        // Check SDL video driver to handle Wayland/compositor limitations
+        const char* videoDriver = SDL_GetCurrentVideoDriver();
+#ifdef JOY_MENU_DEBUG
+        printf("JOY_MENU: Current SDL video driver: %s\n", videoDriver ? videoDriver : "unknown");
+#endif
+        
         // Transform from 640x480 logical coordinates to screen pixel coordinates
         // This matches the inverse of the transformation in Window_HandleMouseMove()
         int screenX, screenY;
@@ -1571,10 +1577,49 @@ void Window_WarpCursor(int x, int y)
         printf("JOY_MENU: Transformed to screen coords (%d,%d)\n", screenX, screenY);
 #endif
         
-        // Warp the OS cursor to the transformed screen coordinates
-        SDL_WarpMouseInWindow(displayWindow, screenX, screenY);
+        // For Wayland compositors (like Weston), cursor warping is often restricted or ignored
+        // Try multiple approaches for better compatibility
+        if (videoDriver && strcmp(videoDriver, "wayland") == 0) {
 #ifdef JOY_MENU_DEBUG
-        printf("JOY_MENU: SDL_WarpMouseInWindow called\n");
+            printf("JOY_MENU: Detected Wayland - trying enhanced cursor warp approaches\n");
+#endif
+            // Approach 1: Ensure window has input focus before warping
+            if (SDL_GetWindowFlags(displayWindow) & SDL_WINDOW_INPUT_FOCUS) {
+                // Try to grab the mouse temporarily to ensure warp works
+                SDL_SetWindowGrab(displayWindow, SDL_TRUE);
+                SDL_WarpMouseInWindow(displayWindow, screenX, screenY);
+                SDL_SetWindowGrab(displayWindow, SDL_FALSE);
+#ifdef JOY_MENU_DEBUG
+                printf("JOY_MENU: Used grab-assisted warp for Wayland\n");
+#endif
+            } else {
+                // Window doesn't have focus, try basic warp anyway
+                SDL_WarpMouseInWindow(displayWindow, screenX, screenY);
+#ifdef JOY_MENU_DEBUG
+                printf("JOY_MENU: Window lacks focus, attempted basic warp\n");
+#endif
+            }
+        } else {
+            // Non-Wayland systems (X11, KMS, etc.) - use standard approach
+            SDL_WarpMouseInWindow(displayWindow, screenX, screenY);
+#ifdef JOY_MENU_DEBUG
+            printf("JOY_MENU: Used standard SDL_WarpMouseInWindow for non-Wayland\n");
+#endif
+        }
+        
+        // Additional fallback: Force a mouse motion event to ensure GUI updates
+        // This helps ensure the virtual cursor state stays consistent even if OS cursor doesn't move
+        SDL_Event mouseEvent = {0};
+        mouseEvent.type = SDL_MOUSEMOTION;
+        mouseEvent.motion.windowID = SDL_GetWindowID(displayWindow);
+        mouseEvent.motion.x = screenX;
+        mouseEvent.motion.y = screenY;
+        mouseEvent.motion.xrel = 0;
+        mouseEvent.motion.yrel = 0;
+        SDL_PushEvent(&mouseEvent);
+        
+#ifdef JOY_MENU_DEBUG
+        printf("JOY_MENU: Pushed synthetic mouse motion event\n");
 #endif
     }
 }
