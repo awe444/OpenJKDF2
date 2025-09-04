@@ -808,11 +808,6 @@ void stdControl_ReadControls()
     
     // Joystick menu navigation: process left stick movement and A button for GUI menus
     if (stdControl_bHasJoysticks && stdControl_aJoystickExists[0]) {
-        // Debug: Confirm joystick menu navigation code section is being executed
-        static int functionCallCounter = 0;
-        if (++functionCallCounter % 120 == 0) { // Every ~2 seconds at 60fps
-            printf("DEBUG_ESC: stdControl_ReadControls() joystick navigation section running (call #%d)\n", functionCallCounter);
-        }
         
         // Left stick movement for menu cursor
         float nx = 0.0f, ny = 0.0f;
@@ -851,41 +846,9 @@ void stdControl_ReadControls()
         stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
         int currentAButtonState = aButtonVal != 0;
         
-        // Debug: Show joystick input handling is running and A button raw state periodically
-        static int debugCounter = 0;
-        if (++debugCounter % 60 == 0) { // Every ~1 second at 60fps
-            printf("DEBUG_ESC: Joystick input handling running - A button raw state: %d (KEY_JOY1_B1 = %d, aKeyInfo = %d, aInput2 = %d)\n", 
-                   currentAButtonState, KEY_JOY1_B1, stdControl_aKeyInfo[KEY_JOY1_B1], aButtonVal);
-        }
-        
         if (currentAButtonState != prevAButtonState) {
-            // Debug: Show A button state change
-            printf("DEBUG_ESC: A button state changed: %d -> %d\n", prevAButtonState, currentAButtonState);
-            
             // Check if we're in a cutscene or video mode where A button should act like ESC
             int currentGuiState = jkSmack_GetCurrentGuiState();
-            
-            // Convert game state to readable string for better debugging
-            const char* stateString = "UNKNOWN";
-            switch(currentGuiState) {
-                case JK_GAMEMODE_NONE: stateString = "NONE"; break;
-                case JK_GAMEMODE_VIDEO: stateString = "VIDEO"; break;
-                case JK_GAMEMODE_TITLE: stateString = "TITLE"; break;
-                case JK_GAMEMODE_MAIN: stateString = "MAIN"; break;
-                case JK_GAMEMODE_VIDEO2: stateString = "VIDEO2"; break;
-                case JK_GAMEMODE_GAMEPLAY: stateString = "GAMEPLAY"; break;
-                case JK_GAMEMODE_ESCAPE: stateString = "ESCAPE"; break;
-                case JK_GAMEMODE_CD_SWITCH: stateString = "CD_SWITCH"; break;
-                case JK_GAMEMODE_VIDEO3: stateString = "VIDEO3"; break;
-                case JK_GAMEMODE_ENDLEVEL: stateString = "ENDLEVEL"; break;
-                case JK_GAMEMODE_VIDEO4: stateString = "VIDEO4"; break;
-                case JK_GAMEMODE_CHOICE: stateString = "CHOICE"; break;
-                case JK_GAMEMODE_CUTSCENE: stateString = "CUTSCENE"; break;
-                case JK_GAMEMODE_CREDITS: stateString = "CREDITS"; break;
-                case JK_GAMEMODE_UNK: stateString = "UNK"; break;
-                case JK_GAMEMODE_MOTS_CUTSCENE: stateString = "MOTS_CUTSCENE"; break;
-            }
-            printf("DEBUG_ESC: Current GUI state: %d (%s)\n", currentGuiState, stateString);
             
             if (currentGuiState == JK_GAMEMODE_VIDEO || 
                 currentGuiState == JK_GAMEMODE_VIDEO2 || 
@@ -894,41 +857,24 @@ void stdControl_ReadControls()
                 currentGuiState == JK_GAMEMODE_CUTSCENE || 
                 currentGuiState == JK_GAMEMODE_MOTS_CUTSCENE) {
                 
-                printf("DEBUG_ESC: In cutscene/video mode - simulating ESC key\n");
-                
                 // In cutscene/video mode: A button acts like ESC key
                 if (currentAButtonState) { // Button pressed
-                    printf("DEBUG_ESC: Sending ESC key DOWN (DIK_ESCAPE=%d)\n", DIK_ESCAPE);
                     // Simulate ESC key press by setting the key state
                     stdControl_SetKeydown(DIK_ESCAPE, 1, stdControl_curReadTime);
-                    printf("DEBUG_ESC: ESC key state after setting: %d\n", stdControl_aKeyInfo[DIK_ESCAPE]);
                 } else { // Button released
-                    printf("DEBUG_ESC: Sending ESC key UP (DIK_ESCAPE=%d)\n", DIK_ESCAPE);
                     // Simulate ESC key release
                     stdControl_SetKeydown(DIK_ESCAPE, 0, stdControl_curReadTime);
-                    printf("DEBUG_ESC: ESC key state after clearing: %d\n", stdControl_aKeyInfo[DIK_ESCAPE]);
                 }
                 
                 // Prevent GUI code from also processing this A button press
-                printf("DEBUG_ESC: Clearing A button state to prevent GUI interference\n");
                 stdControl_aKeyInfo[KEY_JOY1_B1] = 0;
                 stdControl_aInput2[KEY_JOY1_B1] = 0;
             } else {
-                printf("DEBUG_ESC: In menu mode - using mouse click\n");
                 // In menu mode: A button acts like mouse click
                 jkGuiRend_ControllerMouseButton(currentAButtonState);
             }
             prevAButtonState = currentAButtonState;
         }
-    }
-    
-    // Debug: Check if ESC key is ever pressed/detected
-    static int prevEscState = 0;
-    int currentEscState = stdControl_aKeyInfo[DIK_ESCAPE] != 0;
-    if (currentEscState != prevEscState) {
-        printf("DEBUG_ESC: ESC key state changed: %d -> %d (DIK_ESCAPE=%d)\n", 
-               prevEscState, currentEscState, DIK_ESCAPE);
-        prevEscState = currentEscState;
     }
     
     stdControl_ReadMouse();
