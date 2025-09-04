@@ -1585,54 +1585,23 @@ void Window_WarpCursor(int x, int y)
         printf("JOY_MENU: Transformed to screen coords (%d,%d)\n", screenX, screenY);
 #endif
         
-        // For Wayland compositors (like Weston), cursor warping is often restricted or ignored
-        // Try multiple advanced approaches for better compatibility
+        // Try cursor warping - for Wayland this may fail due to compositor restrictions
         if (videoDriver && strcmp(videoDriver, "wayland") == 0) {
 #ifdef JOY_MENU_DEBUG
-            printf("JOY_MENU: Detected Wayland - trying enhanced cursor warp approaches\n");
+            printf("JOY_MENU: Detected Wayland - trying grab-assisted cursor warp\n");
 #endif
-            
-            // Method 1: Multiple grab attempts with delay for better Wayland compatibility
-            int warpSuccess = 0;
-            for (int attempt = 0; attempt < 3 && !warpSuccess; attempt++) {
-                if (SDL_GetWindowFlags(displayWindow) & SDL_WINDOW_INPUT_FOCUS) {
-                    // Set relative mode temporarily to gain more control
-                    int wasRelative = SDL_GetRelativeMouseMode();
-                    
-                    SDL_SetWindowGrab(displayWindow, SDL_TRUE);
-                    SDL_SetRelativeMouseMode(SDL_TRUE);
-                    SDL_Delay(1); // Small delay for compositor to process
-                    SDL_SetRelativeMouseMode(SDL_FALSE);
-                    
-                    SDL_WarpMouseInWindow(displayWindow, screenX, screenY);
-                    SDL_Delay(1); // Small delay for warp to take effect
-                    
-                    SDL_SetWindowGrab(displayWindow, SDL_FALSE);
-                    
-                    // Check if warp was successful by querying mouse position
-                    int currentX, currentY;
-                    SDL_GetMouseState(&currentX, &currentY);
-                    if (abs(currentX - screenX) <= 2 && abs(currentY - screenY) <= 2) {
-                        warpSuccess = 1;
+            // For Wayland, try grab-assisted approach without complex cycling
+            if (SDL_GetWindowFlags(displayWindow) & SDL_WINDOW_INPUT_FOCUS) {
+                SDL_SetWindowGrab(displayWindow, SDL_TRUE);
+                SDL_WarpMouseInWindow(displayWindow, screenX, screenY);
+                SDL_SetWindowGrab(displayWindow, SDL_FALSE);
 #ifdef JOY_MENU_DEBUG
-                        printf("JOY_MENU: Wayland warp successful on attempt %d\n", attempt + 1);
+                printf("JOY_MENU: Used grab-assisted warp for Wayland\n");
 #endif
-                    }
-                    
-                    // Restore original relative mode state
-                    if (wasRelative) SDL_SetRelativeMouseMode(SDL_TRUE);
-                } else {
-                    // Try basic warp without focus
-                    SDL_WarpMouseInWindow(displayWindow, screenX, screenY);
+            } else {
+                SDL_WarpMouseInWindow(displayWindow, screenX, screenY);
 #ifdef JOY_MENU_DEBUG
-                    printf("JOY_MENU: Wayland warp attempted without focus (attempt %d)\n", attempt + 1);
-#endif
-                }
-            }
-            
-            if (!warpSuccess) {
-#ifdef JOY_MENU_DEBUG
-                printf("JOY_MENU: All Wayland warp attempts failed, relying on synthetic events\n");
+                printf("JOY_MENU: Used basic warp for Wayland (no focus)\n");
 #endif
             }
         } else {
@@ -1642,41 +1611,6 @@ void Window_WarpCursor(int x, int y)
             printf("JOY_MENU: Used standard SDL_WarpMouseInWindow for non-Wayland\n");
 #endif
         }
-        
-        // Always push synthetic mouse motion event for consistent GUI state
-        // This ensures the virtual cursor works even if OS cursor warping fails
-        SDL_Event mouseEvent = {0};
-        mouseEvent.type = SDL_MOUSEMOTION;
-        mouseEvent.motion.windowID = SDL_GetWindowID(displayWindow);
-        mouseEvent.motion.x = screenX;
-        mouseEvent.motion.y = screenY;
-        mouseEvent.motion.xrel = 0;
-        mouseEvent.motion.yrel = 0;
-        mouseEvent.motion.state = SDL_GetMouseState(NULL, NULL);
-        SDL_PushEvent(&mouseEvent);
-        
-        // Also push a separate mouse motion event using the logical coordinates
-        // to ensure consistency with the GUI layer expectations
-        SDL_Event logicalMouseEvent = {0};
-        logicalMouseEvent.type = SDL_MOUSEMOTION;
-        logicalMouseEvent.motion.windowID = SDL_GetWindowID(displayWindow);
-        logicalMouseEvent.motion.x = x;
-        logicalMouseEvent.motion.y = y;
-        logicalMouseEvent.motion.xrel = 0;
-        logicalMouseEvent.motion.yrel = 0;
-        logicalMouseEvent.motion.state = SDL_GetMouseState(NULL, NULL);
-        
-        // For Wayland, prioritize the logical coordinates since physical warping may fail
-        if (videoDriver && strcmp(videoDriver, "wayland") == 0) {
-            SDL_PushEvent(&logicalMouseEvent);
-#ifdef JOY_MENU_DEBUG
-            printf("JOY_MENU: Pushed Wayland-specific logical mouse motion event (%d,%d)\n", x, y);
-#endif
-        }
-        
-#ifdef JOY_MENU_DEBUG
-        printf("JOY_MENU: Pushed synthetic mouse motion event (%d,%d)\n", screenX, screenY);
-#endif
     }
 }
 
