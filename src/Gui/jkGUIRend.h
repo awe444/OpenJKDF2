@@ -81,8 +81,7 @@
 #define FOCUS_DOWN  (3)
 #define FOCUS_NONE  (4)
 
-// Compile-time toggle for joystick menu debug logging
-#define JOY_MENU_DEBUG 0
+
 
 extern int32_t jkGuiRend_thing_five;
 extern int32_t jkGuiRend_thing_four;

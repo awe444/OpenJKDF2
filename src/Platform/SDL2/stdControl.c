@@ -805,9 +805,6 @@ void stdControl_ReadControls()
     
     // Joystick menu navigation: process left stick movement and A button for GUI menus
     if (stdControl_bHasJoysticks && stdControl_aJoystickExists[0]) {
-#ifdef JOY_MENU_DEBUG
-        printf("JOY_MENU: Processing joystick input\n");
-#endif
         // Left stick movement for menu cursor
         float nx = 0.0f, ny = 0.0f;
         
@@ -815,10 +812,6 @@ void stdControl_ReadControls()
         if (stdControl_aAxisEnabled[0]) {
             int rawX = stdControl_aAxisPos[AXIS_JOY1_X];
             int rawY = stdControl_aAxisPos[AXIS_JOY1_Y];
-            
-#ifdef JOY_MENU_DEBUG
-            printf("JOY_MENU: Raw joystick values: X=%d, Y=%d\n", rawX, rawY);
-#endif
             
             // Normalize to [-1, 1] range (SDL joystick range is typically -32768 to 32767)
             nx = rawX / 32768.0f;
@@ -829,10 +822,6 @@ void stdControl_ReadControls()
             if (fabs(nx) < deadzone) nx = 0.0f;
             if (fabs(ny) < deadzone) ny = 0.0f;
             
-#ifdef JOY_MENU_DEBUG
-            printf("JOY_MENU: Normalized values after deadzone: X=%.3f, Y=%.3f\n", nx, ny);
-#endif
-            
             // Convert to pixel deltas
             if (nx != 0.0f || ny != 0.0f) {
                 float speedPxPerSec = 1100.0f;
@@ -840,10 +829,6 @@ void stdControl_ReadControls()
                 
                 int mdx = (int)(nx * speedPxPerSec * dt);
                 int mdy = (int)(ny * speedPxPerSec * dt);
-                
-#ifdef JOY_MENU_DEBUG
-                printf("JOY_MENU: Movement deltas: dx=%d, dy=%d (dt=%.3f)\n", mdx, mdy, dt);
-#endif
                 
                 if (mdx != 0 || mdy != 0) {
                     jkGuiRend_ControllerMouseMove(mdx, mdy);
@@ -855,9 +840,21 @@ void stdControl_ReadControls()
         static int prevAButtonState = 0;
         int currentAButtonState = stdControl_aKeyInfo[KEY_JOY1_B1] != 0;
         
+        // Debug: Show A button raw state periodically (not just on change)
+        static int debugCounter = 0;
+        if (++debugCounter % 60 == 0) { // Every ~1 second at 60fps
+            printf("DEBUG_ESC: A button raw state: %d (KEY_JOY1_B1 = %d)\n", 
+                   currentAButtonState, stdControl_aKeyInfo[KEY_JOY1_B1]);
+        }
+        
         if (currentAButtonState != prevAButtonState) {
+            // Debug: Show A button state change
+            printf("DEBUG_ESC: A button state changed: %d -> %d\n", prevAButtonState, currentAButtonState);
+            
             // Check if we're in a cutscene or video mode where A button should act like ESC
             int currentGuiState = jkSmack_GetCurrentGuiState();
+            printf("DEBUG_ESC: Current GUI state: %d\n", currentGuiState);
+            
             if (currentGuiState == JK_GAMEMODE_VIDEO || 
                 currentGuiState == JK_GAMEMODE_VIDEO2 || 
                 currentGuiState == JK_GAMEMODE_VIDEO3 || 
@@ -865,18 +862,20 @@ void stdControl_ReadControls()
                 currentGuiState == JK_GAMEMODE_CUTSCENE || 
                 currentGuiState == JK_GAMEMODE_MOTS_CUTSCENE) {
                 
+                printf("DEBUG_ESC: In cutscene/video mode - simulating ESC key\n");
+                
                 // In cutscene/video mode: A button acts like ESC key
                 if (currentAButtonState) { // Button pressed
-#ifdef JOY_MENU_DEBUG
-                    printf("JOY_MENU: A button pressed in cutscene/video mode - simulating ESC key\n");
-#endif
+                    printf("DEBUG_ESC: Sending ESC key DOWN\n");
                     // Simulate ESC key press by setting the key state
                     stdControl_SetKeydown(DIK_ESCAPE, 1, stdControl_curReadTime);
                 } else { // Button released
+                    printf("DEBUG_ESC: Sending ESC key UP\n");
                     // Simulate ESC key release
                     stdControl_SetKeydown(DIK_ESCAPE, 0, stdControl_curReadTime);
                 }
             } else {
+                printf("DEBUG_ESC: In menu mode - using mouse click\n");
                 // In menu mode: A button acts like mouse click
                 jkGuiRend_ControllerMouseButton(currentAButtonState);
             }

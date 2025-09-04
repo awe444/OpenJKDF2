@@ -2864,20 +2864,12 @@ void jkGuiRend_ControllerMouseMove(int dx, int dy)
         if (jkGuiRend_mouseY >= 480) jkGuiRend_mouseY = 479;
     }
 
-#ifdef JOY_MENU_DEBUG
-    printf("JOY_MENU: Mouse move delta=(%d,%d), new pos=(%d,%d)\n", dx, dy, jkGuiRend_mouseX, jkGuiRend_mouseY);
-#endif
+
 
     // Update mouse interaction to trigger hover effects
     jkGuiRend_UpdateMouse();
     
-    // Warp the OS cursor to match the virtual position if callback is set
-    if (jkGuiRend_warpCallback) {
-#ifdef JOY_MENU_DEBUG
-        printf("JOY_MENU: Calling warp callback to (%d,%d)\n", jkGuiRend_mouseX, jkGuiRend_mouseY);
-#endif
-        jkGuiRend_warpCallback(jkGuiRend_mouseX, jkGuiRend_mouseY);
-    }
+
 }
 
 void jkGuiRend_ControllerMouseButton(int down)
@@ -2887,9 +2879,7 @@ void jkGuiRend_ControllerMouseButton(int down)
         return;
     }
 
-#ifdef JOY_MENU_DEBUG
-    printf("JOY_MENU: Mouse button %s\n", down ? "DOWN" : "UP");
-#endif
+
 
     if (down) {
         // Mouse button down: set the down clickable and update visuals
@@ -2898,19 +2888,13 @@ void jkGuiRend_ControllerMouseButton(int down)
         if (jkGuiRend_activeMenu->lastMouseDownClickable) {
             // Update visuals to show pressed state
             jkGuiRend_UpdateAndDrawClickable(jkGuiRend_activeMenu->lastMouseDownClickable, jkGuiRend_activeMenu, 1);
-            
-#ifdef JOY_MENU_DEBUG
-            printf("JOY_MENU: Button pressed on element\n");
-#endif
+
         }
     } else {
         // Mouse button up: trigger click if still over the same element
         if (jkGuiRend_activeMenu->lastMouseDownClickable) {
             if (jkGuiRend_activeMenu->lastMouseDownClickable == jkGuiRend_activeMenu->lastMouseOverClickable) {
-                // Still over the same element, invoke the click
-#ifdef JOY_MENU_DEBUG
-                printf("JOY_MENU: Invoking click on element\n");
-#endif
+
                 jkGuiRend_InvokeClicked(jkGuiRend_activeMenu->lastMouseOverClickable, jkGuiRend_activeMenu, jkGuiRend_mouseX, jkGuiRend_mouseY, 1);
             }
             
@@ -2919,10 +2903,6 @@ void jkGuiRend_ControllerMouseButton(int down)
                 jkGuiRend_UpdateAndDrawClickable(jkGuiRend_activeMenu->lastMouseDownClickable, jkGuiRend_activeMenu, 1);
             }
             jkGuiRend_activeMenu->lastMouseDownClickable = 0;
-            
-#ifdef JOY_MENU_DEBUG
-            printf("JOY_MENU: Button released, cleared down state\n");
-#endif
         }
     }
 }
@@ -2933,10 +2913,6 @@ void jkGuiRend_DrawCustomCursor(jkGuiMenu *menu)
     if (!jkGuiRend_customCursorEnabled || !menu || !jkGuiRend_menuBuffer) {
         return;
     }
-
-#ifdef JOY_MENU_DEBUG
-    printf("JOY_MENU: Drawing custom cursor at (%d,%d)\n", jkGuiRend_mouseX, jkGuiRend_mouseY);
-#endif
 
     // Create a red filled rectangle (8x8 pixels) at the current virtual cursor position
     rdRect cursorRect;
@@ -2974,15 +2950,9 @@ void jkGuiRend_DrawCustomCursor(jkGuiMenu *menu)
 void jkGuiRend_EnableCustomCursor(int enable)
 {
     jkGuiRend_customCursorEnabled = enable;
-#ifdef JOY_MENU_DEBUG
-    printf("JOY_MENU: Custom cursor rendering %s\n", enable ? "ENABLED" : "DISABLED");
-#endif
 }
 
 void jkGuiRend_SetWarpCallback(jkGuiRend_WarpFn fn)
 {
     jkGuiRend_warpCallback = fn;
-#ifdef JOY_MENU_DEBUG
-    printf("JOY_MENU: Warp callback registered: %p\n", (void*)fn);
-#endif
 }
