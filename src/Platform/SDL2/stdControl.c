@@ -805,6 +805,12 @@ void stdControl_ReadControls()
     
     // Joystick menu navigation: process left stick movement and A button for GUI menus
     if (stdControl_bHasJoysticks && stdControl_aJoystickExists[0]) {
+        // Debug: Confirm joystick menu navigation code section is being executed
+        static int functionCallCounter = 0;
+        if (++functionCallCounter % 120 == 0) { // Every ~2 seconds at 60fps
+            printf("DEBUG_ESC: stdControl_ReadControls() joystick navigation section running (call #%d)\n", functionCallCounter);
+        }
+        
         // Left stick movement for menu cursor
         float nx = 0.0f, ny = 0.0f;
         
@@ -840,11 +846,11 @@ void stdControl_ReadControls()
         static int prevAButtonState = 0;
         int currentAButtonState = stdControl_aKeyInfo[KEY_JOY1_B1] != 0;
         
-        // Debug: Show A button raw state periodically (not just on change)
+        // Debug: Show joystick input handling is running and A button raw state periodically
         static int debugCounter = 0;
         if (++debugCounter % 60 == 0) { // Every ~1 second at 60fps
-            printf("DEBUG_ESC: A button raw state: %d (KEY_JOY1_B1 = %d)\n", 
-                   currentAButtonState, stdControl_aKeyInfo[KEY_JOY1_B1]);
+            printf("DEBUG_ESC: Joystick input handling running - A button raw state: %d (KEY_JOY1_B1 = %d, array value = %d)\n", 
+                   currentAButtonState, KEY_JOY1_B1, stdControl_aKeyInfo[KEY_JOY1_B1]);
         }
         
         if (currentAButtonState != prevAButtonState) {
@@ -904,6 +910,15 @@ void stdControl_ReadControls()
             }
             prevAButtonState = currentAButtonState;
         }
+    }
+    
+    // Debug: Check if ESC key is ever pressed/detected
+    static int prevEscState = 0;
+    int currentEscState = stdControl_aKeyInfo[DIK_ESCAPE] != 0;
+    if (currentEscState != prevEscState) {
+        printf("DEBUG_ESC: ESC key state changed: %d -> %d (DIK_ESCAPE=%d)\n", 
+               prevEscState, currentEscState, DIK_ESCAPE);
+        prevEscState = currentEscState;
     }
     
     stdControl_ReadMouse();
