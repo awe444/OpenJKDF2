@@ -2869,7 +2869,10 @@ void jkGuiRend_ControllerMouseMove(int dx, int dy)
     // Update mouse interaction to trigger hover effects
     jkGuiRend_UpdateMouse();
     
-
+    // Warp the OS cursor to match the virtual position if callback is set
+    if (jkGuiRend_warpCallback) {
+        jkGuiRend_warpCallback(jkGuiRend_mouseX, jkGuiRend_mouseY);
+    }
 }
 
 void jkGuiRend_ControllerMouseButton(int down)
