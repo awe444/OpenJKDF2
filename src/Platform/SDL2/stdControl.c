@@ -871,10 +871,10 @@ void stdControl_ReadControls()
                     printf("JOY_MENU: A button pressed in cutscene/video mode - simulating ESC key\n");
 #endif
                     // Simulate ESC key press by setting the key state
-                    stdControl_SetKeydown(KEY_ESCAPE, 1, stdControl_curReadTime);
+                    stdControl_SetKeydown(DIK_ESCAPE, 1, stdControl_curReadTime);
                 } else { // Button released
                     // Simulate ESC key release
-                    stdControl_SetKeydown(KEY_ESCAPE, 0, stdControl_curReadTime);
+                    stdControl_SetKeydown(DIK_ESCAPE, 0, stdControl_curReadTime);
                 }
             } else {
                 // In menu mode: A button acts like mouse click
