@@ -610,14 +610,14 @@ int jkCutscene_smack_related_loops()
     debugCallCount++;
     if (debugCallCount % 60 == 1) { // Print every ~1 second (assuming 60fps)
         printf("DEBUG_CUTSCENE: jkCutscene_smack_related_loops() called (count=%d)\n", debugCallCount);
-        printf("DEBUG_CUTSCENE: Joystick state - bHasJoysticks=%d, aJoystickExists[0]=%d\n", 
+        printf("DEBUG_CUTSCENE: Joystick state - bHasJoysticks=%d, aJoystickExists[0]=%d (using aJoystickExists for ESC)\n", 
                stdControl_bHasJoysticks, stdControl_aJoystickExists[0]);
     }
     
     // Check for joystick A button press during cutscenes/videos to simulate ESC key
     static int prevAButtonState = 0;
     int currentAButtonState = 0;
-    if (stdControl_bHasJoysticks && stdControl_aJoystickExists[0]) {
+    if (stdControl_aJoystickExists[0]) {
         int aButtonVal = 0;
         stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
         currentAButtonState = aButtonVal != 0;
