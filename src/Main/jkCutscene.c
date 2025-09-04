@@ -788,6 +788,24 @@ int jkCutscene_Handler(HWND a1, UINT a2, WPARAM a3, LPARAM a4, LRESULT *a5)
 {
     wchar_t *v5; // eax
 
+    // Check for joystick A button press to simulate ESC during cutscenes
+    static int prevAButtonState = 0;
+    if (stdControl_bHasJoysticks && stdControl_aJoystickExists[0]) {
+        int aButtonVal = 0;
+        stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
+        int currentAButtonState = aButtonVal != 0;
+        
+        if (currentAButtonState && !prevAButtonState) {
+            // A button just pressed - simulate ESC key to exit cutscene
+            printf("DEBUG_CUTSCENE_HANDLER: A button pressed in cutscene handler, ending cutscene\n");
+            if (jkCutscene_isRendering) {
+                prevAButtonState = currentAButtonState;
+                return jkCutscene_sub_421410();
+            }
+        }
+        prevAButtonState = currentAButtonState;
+    }
+
     switch ( a2 )
     {
         case WM_CLOSE:
@@ -879,6 +897,16 @@ int jkCutscene_smacker_process()
         return 0;
     if (!std3D_IsReady()) {
         return 0;
+    }
+
+    // Check for joystick A button press to exit cutscene
+    if (stdControl_bHasJoysticks && stdControl_aJoystickExists[0]) {
+        int aButtonVal = 0;
+        stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
+        if (aButtonVal) {
+            printf("DEBUG_SMACKER: A button pressed in smacker_process, ending cutscene\n");
+            return 1; // Return 1 to indicate video finished
+        }
     }
 
     flex64_t cur_displayFrame = (flex64_t)Linux_TimeUs();
@@ -1131,6 +1159,16 @@ int jkCutscene_smusher_process()
         return 0;
     if (!std3D_IsReady()) {
         return 0;
+    }
+
+    // Check for joystick A button press to exit cutscene
+    if (stdControl_bHasJoysticks && stdControl_aJoystickExists[0]) {
+        int aButtonVal = 0;
+        stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
+        if (aButtonVal) {
+            printf("DEBUG_SMUSHER: A button pressed in smusher_process, ending cutscene\n");
+            return 1; // Return 1 to indicate video finished
+        }
     }
 
     flex64_t cur_displayFrame = (flex64_t)Linux_TimeUs();

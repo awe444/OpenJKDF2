@@ -806,17 +806,6 @@ void stdControl_ReadControls()
         }
     }
     
-    // Debug: Print joystick detection state periodically
-    static int debugControlCallCount = 0;
-    debugControlCallCount++;
-    if (debugControlCallCount % 300 == 1) { // Print every ~5 seconds (assuming 60fps)
-        printf("DEBUG_CONTROL: stdControl_ReadControls() called (count=%d)\n", debugControlCallCount);
-        printf("DEBUG_CONTROL: Joystick state - bHasJoysticks=%d, aJoystickExists[0]=%d\n", 
-               stdControl_bHasJoysticks, stdControl_aJoystickExists[0]);
-        int currentGuiState = jkSmack_GetCurrentGuiState();
-        printf("DEBUG_CONTROL: Current GUI state = %d\n", currentGuiState);
-    }
-    
     // Joystick menu navigation: process left stick movement and A button for GUI menus
     if (stdControl_bHasJoysticks && stdControl_aJoystickExists[0]) {
         
@@ -857,17 +846,9 @@ void stdControl_ReadControls()
         stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
         int currentAButtonState = aButtonVal != 0;
         
-        // Debug: Print A button state periodically
-        if (debugControlCallCount % 60 == 1) { // Print every ~1 second
-            printf("DEBUG_CONTROL: A button raw state - aButtonVal=%d, currentState=%d\n", aButtonVal, currentAButtonState);
-        }
-        
         if (currentAButtonState != prevAButtonState) {
-            printf("DEBUG_CONTROL: A button state changed: %d -> %d\n", prevAButtonState, currentAButtonState);
-            
             // Check if we're in a cutscene or video mode where A button should act like ESC
             int currentGuiState = jkSmack_GetCurrentGuiState();
-            printf("DEBUG_CONTROL: Current GUI state = %d\n", currentGuiState);
             
             if (currentGuiState == JK_GAMEMODE_VIDEO || 
                 currentGuiState == JK_GAMEMODE_VIDEO2 || 
@@ -876,15 +857,14 @@ void stdControl_ReadControls()
                 currentGuiState == JK_GAMEMODE_CUTSCENE || 
                 currentGuiState == JK_GAMEMODE_MOTS_CUTSCENE) {
                 
-                printf("DEBUG_CONTROL: In cutscene/video mode - A button acts as ESC\n");
+                printf("DEBUG_CONTROL: A button %s in GUI state %d - acting as ESC\n", 
+                       currentAButtonState ? "pressed" : "released", currentGuiState);
                 // In cutscene/video mode: A button acts like ESC key
                 if (currentAButtonState) { // Button pressed
                     // Simulate ESC key press by setting the key state
-                    printf("DEBUG_CONTROL: Simulating ESC key press (DIK_ESCAPE=%d)\n", DIK_ESCAPE);
                     stdControl_SetKeydown(DIK_ESCAPE, 1, stdControl_curReadTime);
                 } else { // Button released
                     // Simulate ESC key release
-                    printf("DEBUG_CONTROL: Simulating ESC key release\n");
                     stdControl_SetKeydown(DIK_ESCAPE, 0, stdControl_curReadTime);
                 }
                 
@@ -892,7 +872,6 @@ void stdControl_ReadControls()
                 stdControl_aKeyInfo[KEY_JOY1_B1] = 0;
                 stdControl_aInput2[KEY_JOY1_B1] = 0;
             } else {
-                printf("DEBUG_CONTROL: In menu mode - A button acts as mouse click\n");
                 // In menu mode: A button acts like mouse click
                 jkGuiRend_ControllerMouseButton(currentAButtonState);
             }
