@@ -18,6 +18,7 @@
 #include "General/stdString.h"
 #include "stdPlatform.h"
 #include "Platform/std3D.h"
+#include "Platform/stdControl.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -603,6 +604,28 @@ int jkCutscene_smack_related_loops()
     smack_finished = 0;
     if ( !jkCutscene_isRendering )
         return 1;
+    
+    // Check for joystick A button press during cutscenes/videos to simulate ESC key
+    static int prevAButtonState = 0;
+    int currentAButtonState = 0;
+    if (stdControl_bHasJoysticks && stdControl_aJoystickExists[0]) {
+        int aButtonVal = 0;
+        stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
+        currentAButtonState = aButtonVal != 0;
+        
+        // Debug output for A button state changes
+        if (currentAButtonState != prevAButtonState) {
+            printf("DEBUG_ESC_CUTSCENE: A button state changed: %d -> %d (in cutscene)\n", prevAButtonState, currentAButtonState);
+            
+            if (currentAButtonState) {
+                // A button pressed - simulate ESC key to exit cutscene
+                printf("DEBUG_ESC_CUTSCENE: A button pressed, ending cutscene\n");
+                return jkCutscene_sub_421410();
+            }
+        }
+        prevAButtonState = currentAButtonState;
+    }
+    
     if ( !jkCutscene_55AA54 && g_app_suspended )
     {
 #if !defined(SDL2_RENDER) && !defined(TARGET_TWL)
