@@ -840,7 +840,7 @@ void stdControl_ReadControls()
         }
     }
     
-    // Joystick menu navigation: process left stick movement and A button for GUI menus
+    // Joystick menu navigation: process left stick movement for GUI menus (requires bHasJoysticks)
     if (stdControl_bHasJoysticks && stdControl_aJoystickExists[0]) {
         
         // Left stick movement for menu cursor
@@ -873,8 +873,10 @@ void stdControl_ReadControls()
                 }
             }
         }
-        
-        // A button (KEY_JOY1_B1) for menu clicking and cutscene escape
+    }
+    
+    // A button handling for both menus and cutscenes (works regardless of bHasJoysticks)
+    if (stdControl_aJoystickExists[0]) {
         static int prevAButtonState = 0;
         int aButtonVal = 0;
         stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
@@ -891,8 +893,6 @@ void stdControl_ReadControls()
                 currentGuiState == JK_GAMEMODE_CUTSCENE || 
                 currentGuiState == JK_GAMEMODE_MOTS_CUTSCENE) {
                 
-                printf("DEBUG_CONTROL: A button %s in GUI state %d - acting as ESC\n", 
-                       currentAButtonState ? "pressed" : "released", currentGuiState);
                 // In cutscene/video mode: A button acts like ESC key
                 if (currentAButtonState) { // Button pressed
                     // Simulate ESC key press by setting the key state
@@ -905,8 +905,8 @@ void stdControl_ReadControls()
                 // Prevent GUI code from also processing this A button press
                 stdControl_aKeyInfo[KEY_JOY1_B1] = 0;
                 stdControl_aInput2[KEY_JOY1_B1] = 0;
-            } else {
-                // In menu mode: A button acts like mouse click
+            } else if (stdControl_bHasJoysticks) {
+                // In menu mode: A button acts like mouse click (only when joystick axes enabled)
                 jkGuiRend_ControllerMouseButton(currentAButtonState);
             }
             prevAButtonState = currentAButtonState;
