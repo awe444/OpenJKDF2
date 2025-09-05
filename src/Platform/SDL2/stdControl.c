@@ -695,8 +695,26 @@ void stdControl_ReadControls()
 {
     flex_d_t khz;
 
-    if (!stdControl_bControlsActive)
+    // Debug: Report function entry
+    static uint32_t entryDebugTimer = 0;
+    uint32_t currentTime = SDL_GetTicks();
+    if (currentTime - entryDebugTimer > 2000) {
+        printf("DEBUG_ENTRY: stdControl_ReadControls() called - bControlsActive=%d, console=%d\n", 
+               stdControl_bControlsActive, jkQuakeConsole_bOpen);
+        fflush(stdout);
+        entryDebugTimer = currentTime;
+    }
+
+    if (!stdControl_bControlsActive) {
+        // Debug: Report early return due to controls inactive
+        static uint32_t inactiveDebugTimer = 0;
+        if (currentTime - inactiveDebugTimer > 5000) {
+            printf("DEBUG_ENTRY: Early return - controls not active!\n");
+            fflush(stdout);
+            inactiveDebugTimer = currentTime;
+        }
         return;
+    }
     if (jkQuakeConsole_bOpen) return; // Hijack input to console
 
     _memset(stdControl_aInput1, 0, sizeof(int) * JK_NUM_KEYS);
@@ -885,6 +903,7 @@ void stdControl_ReadControls()
     if (currentTime - debugTimer > 2000) {
         printf("DEBUG_CUTSCENE: stdControl_ReadControls() executing - bHasJoysticks=%d, aJoystickExists[0]=%d, maxJoysticks=%d\n", 
                stdControl_bHasJoysticks, stdControl_aJoystickExists[0], JK_NUM_JOYSTICKS);
+        fflush(stdout);
         debugTimer = currentTime;
     }
     
@@ -898,8 +917,10 @@ void stdControl_ReadControls()
             currentGuiState == JK_GAMEMODE_CUTSCENE || 
             currentGuiState == JK_GAMEMODE_MOTS_CUTSCENE) {
             printf("DEBUG_CUTSCENE: Game is in cutscene/video mode - GUI state: %d\n", currentGuiState);
+            fflush(stdout);
         } else {
             printf("DEBUG_CUTSCENE: Game GUI state: %d (not in cutscene)\n", currentGuiState);
+            fflush(stdout);
         }
         guiStateDebugTimer = currentTime;
     }
@@ -916,6 +937,7 @@ void stdControl_ReadControls()
                     if (buttonVal != 0) {
                         printf("DEBUG_CUTSCENE: Joystick %d button %d (key %d) is pressed! Value: %d\n", 
                                i, j, buttonKey, buttonVal);
+                        fflush(stdout);
                     }
                 }
             }
@@ -926,6 +948,7 @@ void stdControl_ReadControls()
         stdControl_ReadKey(DIK_ESCAPE, &escVal);
         if (escVal != 0) {
             printf("DEBUG_CUTSCENE: ESC key is pressed! Value: %d\n", escVal);
+            fflush(stdout);
         }
         
         buttonDebugTimer = currentTime;
@@ -942,10 +965,12 @@ void stdControl_ReadControls()
         if (currentAButtonState != prevAButtonState) {
             printf("DEBUG_CUTSCENE: A button state changed - was: %d, now: %d, rawVal: %d\n", 
                    prevAButtonState, currentAButtonState, aButtonVal);
+            fflush(stdout);
         }
         
         if (currentAButtonState && !prevAButtonState) { // A button just pressed
             printf("DEBUG_CUTSCENE: A button PRESSED - checking GUI state...\n");
+            fflush(stdout);
             
             if (currentGuiState == JK_GAMEMODE_VIDEO || 
                 currentGuiState == JK_GAMEMODE_VIDEO2 || 
@@ -957,6 +982,7 @@ void stdControl_ReadControls()
                 // In cutscene/video mode: A button directly skips cutscene
                 printf("DEBUG_CUTSCENE: A button pressed - TRIGGERING CUTSCENE SKIP! (GUI state: %d)\n", currentGuiState);
                 printf("DEBUG_CUTSCENE: Calling jkCutscene_sub_421410()...\n");
+                fflush(stdout);
                 jkCutscene_sub_421410(); // Directly call cutscene termination function
                 printf("DEBUG_CUTSCENE: jkCutscene_sub_421410() call completed\n");
                 

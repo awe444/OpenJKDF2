@@ -20,6 +20,10 @@
 #include "Platform/std3D.h"
 #include "Platform/stdControl.h"
 
+#ifdef SDL2_RENDER
+#include <SDL2/SDL.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -527,6 +531,8 @@ int jkCutscene_sub_421310(char* fpath)
 int jkCutscene_sub_421410()
 {
     stdPlatform_Printf("OpenJKDF2: %s\n", __func__);
+    printf("DEBUG_CUTSCENE_SKIP: jkCutscene_sub_421410() called - CUTSCENE SKIP TRIGGERED!\n");
+    fflush(stdout);
     
 #if !defined(SDL2_RENDER) && !defined(TARGET_TWL)
     if ( !jkCutscene_isRendering )
@@ -600,6 +606,16 @@ int jkCutscene_smack_related_loops()
 {
     int32_t smack_finished; // esi
     int32_t v2; // ecx
+
+    // Debug: Report function execution
+    static uint32_t loopDebugTimer = 0;
+    uint32_t currentTime = SDL_GetTicks();
+    if (currentTime - loopDebugTimer > 2000) {
+        printf("DEBUG_CUTSCENE_LOOP: jkCutscene_smack_related_loops() executing - isRendering=%d, suspended=%d\n", 
+               jkCutscene_isRendering, g_app_suspended);
+        fflush(stdout);
+        loopDebugTimer = currentTime;
+    }
 
     smack_finished = 0;
     if ( !jkCutscene_isRendering )
@@ -836,6 +852,32 @@ void jkCutscene_smacker_process_audio()
 
 int jkCutscene_smacker_process()
 {
+    // Debug: Report function execution
+    static uint32_t smackerDebugTimer = 0;
+    uint32_t currentTime = SDL_GetTicks();
+    if (currentTime - smackerDebugTimer > 3000) {
+        printf("DEBUG_CUTSCENE_SMACKER: jkCutscene_smacker_process() executing - isRendering=%d\n", 
+               jkCutscene_isRendering);
+        fflush(stdout);
+        smackerDebugTimer = currentTime;
+    }
+
+    // Check for A button press for cutscene skipping
+    static int prevAButtonState = 0;
+    if (stdControl_aJoystickExists[0]) {
+        int aButtonVal = 0;
+        stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
+        int currentAButtonState = aButtonVal != 0;
+        
+        if (currentAButtonState && !prevAButtonState) { // A button just pressed
+            printf("DEBUG_CUTSCENE_SMACKER: A button pressed during smacker processing - SKIPPING!\n");
+            fflush(stdout);
+            jkCutscene_sub_421410();
+            return 1; // Signal cutscene finished
+        }
+        prevAButtonState = currentAButtonState;
+    }
+
     if ( !jkCutscene_isRendering )
         return 0;
     if (!std3D_IsReady()) {
@@ -1088,6 +1130,32 @@ skip_audio:
 
 int jkCutscene_smusher_process()
 {
+    // Debug: Report function execution
+    static uint32_t smusherDebugTimer = 0;
+    uint32_t currentTime = SDL_GetTicks();
+    if (currentTime - smusherDebugTimer > 3000) {
+        printf("DEBUG_CUTSCENE_SMUSHER: jkCutscene_smusher_process() executing - isRendering=%d\n", 
+               jkCutscene_isRendering);
+        fflush(stdout);
+        smusherDebugTimer = currentTime;
+    }
+
+    // Check for A button press for cutscene skipping
+    static int prevAButtonState = 0;
+    if (stdControl_aJoystickExists[0]) {
+        int aButtonVal = 0;
+        stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
+        int currentAButtonState = aButtonVal != 0;
+        
+        if (currentAButtonState && !prevAButtonState) { // A button just pressed
+            printf("DEBUG_CUTSCENE_SMUSHER: A button pressed during smusher processing - SKIPPING!\n");
+            fflush(stdout);
+            jkCutscene_sub_421410();
+            return 1; // Signal cutscene finished
+        }
+        prevAButtonState = currentAButtonState;
+    }
+
     if ( !jkCutscene_isRendering )
         return 0;
     if (!std3D_IsReady()) {
