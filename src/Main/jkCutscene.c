@@ -609,8 +609,8 @@ int jkCutscene_smack_related_loops()
     static int debugCallCount = 0;
     debugCallCount++;
     if (debugCallCount % 60 == 1) { // Print every ~1 second (assuming 60fps)
-        printf("DEBUG_CUTSCENE: jkCutscene_smack_related_loops() called (count=%d)\n", debugCallCount);
-        printf("DEBUG_CUTSCENE: Joystick state - bHasJoysticks=%d, aJoystickExists[0]=%d (using aJoystickExists for ESC)\n", 
+        printf("CUTSCENE_A_DEBUG: jkCutscene_smack_related_loops() called (count=%d)\n", debugCallCount);
+        printf("CUTSCENE_A_DEBUG: Joystick state - bHasJoysticks=%d, aJoystickExists[0]=%d (using aJoystickExists for ESC)\n", 
                stdControl_bHasJoysticks, stdControl_aJoystickExists[0]);
     }
     
@@ -624,23 +624,23 @@ int jkCutscene_smack_related_loops()
         
         // Debug output for A button raw state every few frames
         if (debugCallCount % 30 == 1) { // Print every ~0.5 seconds
-            printf("DEBUG_CUTSCENE: A button raw state - aButtonVal=%d, currentState=%d\n", aButtonVal, currentAButtonState);
+            printf("CUTSCENE_A_DEBUG: Smack_loops - A button raw state - aButtonVal=%d, currentState=%d\n", aButtonVal, currentAButtonState);
         }
         
         // Debug output for A button state changes
         if (currentAButtonState != prevAButtonState) {
-            printf("DEBUG_CUTSCENE: A button state changed: %d -> %d (in cutscene)\n", prevAButtonState, currentAButtonState);
+            printf("CUTSCENE_A_DEBUG: A button state changed: %d -> %d (in cutscene)\n", prevAButtonState, currentAButtonState);
             
             if (currentAButtonState) {
                 // A button pressed - simulate ESC key to exit cutscene
-                printf("DEBUG_CUTSCENE: A button pressed, ending cutscene via jkCutscene_sub_421410()\n");
+                printf("CUTSCENE_A_DEBUG: A button pressed, ending cutscene via jkCutscene_sub_421410()\n");
                 return jkCutscene_sub_421410();
             }
         }
         prevAButtonState = currentAButtonState;
     } else {
         if (debugCallCount % 60 == 1) {
-            printf("DEBUG_CUTSCENE: No joystick available for A button ESC\n");
+            printf("CUTSCENE_A_DEBUG: No joystick available for A button ESC\n");
         }
     }
     
@@ -789,15 +789,28 @@ int jkCutscene_Handler(HWND a1, UINT a2, WPARAM a3, LPARAM a4, LRESULT *a5)
     wchar_t *v5; // eax
 
     // Check for joystick A button press to simulate ESC during cutscenes
+    // Debug info for function execution tracking
+    static int handlerCallCount = 0;
+    handlerCallCount++;
+    if (handlerCallCount % 60 == 1) { // Print every ~1 second
+        printf("CUTSCENE_A_DEBUG: jkCutscene_Handler() called (count=%d), joystick state: bHasJoysticks=%d, aJoystickExists[0]=%d\n", 
+               handlerCallCount, stdControl_bHasJoysticks, stdControl_aJoystickExists[0]);
+    }
+    
     static int prevAButtonState = 0;
-    if (stdControl_bHasJoysticks && stdControl_aJoystickExists[0]) {
+    if (stdControl_aJoystickExists[0]) { // Removed bHasJoysticks dependency
         int aButtonVal = 0;
         stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
         int currentAButtonState = aButtonVal != 0;
         
+        // Debug A button state
+        if (handlerCallCount % 30 == 1) { // Print every ~0.5 seconds
+            printf("CUTSCENE_A_DEBUG: Handler - A button raw: aButtonVal=%d, currentState=%d\n", aButtonVal, currentAButtonState);
+        }
+        
         if (currentAButtonState && !prevAButtonState) {
             // A button just pressed - simulate ESC key to exit cutscene
-            printf("DEBUG_CUTSCENE_HANDLER: A button pressed in cutscene handler, ending cutscene\n");
+            printf("CUTSCENE_A_DEBUG: A button pressed in cutscene handler, ending cutscene\n");
             if (jkCutscene_isRendering) {
                 prevAButtonState = currentAButtonState;
                 return jkCutscene_sub_421410();
@@ -900,11 +913,24 @@ int jkCutscene_smacker_process()
     }
 
     // Check for joystick A button press to exit cutscene
-    if (stdControl_bHasJoysticks && stdControl_aJoystickExists[0]) {
+    static int smackerCallCount = 0;
+    smackerCallCount++;
+    if (smackerCallCount % 60 == 1) { // Print every ~1 second
+        printf("CUTSCENE_A_DEBUG: jkCutscene_smacker_process() called (count=%d), joystick state: bHasJoysticks=%d, aJoystickExists[0]=%d\n", 
+               smackerCallCount, stdControl_bHasJoysticks, stdControl_aJoystickExists[0]);
+    }
+    
+    if (stdControl_aJoystickExists[0]) { // Removed bHasJoysticks dependency
         int aButtonVal = 0;
         stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
+        
+        // Debug A button state
+        if (smackerCallCount % 30 == 1) { // Print every ~0.5 seconds
+            printf("CUTSCENE_A_DEBUG: Smacker - A button raw: aButtonVal=%d\n", aButtonVal);
+        }
+        
         if (aButtonVal) {
-            printf("DEBUG_SMACKER: A button pressed in smacker_process, ending cutscene\n");
+            printf("CUTSCENE_A_DEBUG: A button pressed in smacker_process, ending cutscene\n");
             return 1; // Return 1 to indicate video finished
         }
     }
@@ -1162,11 +1188,24 @@ int jkCutscene_smusher_process()
     }
 
     // Check for joystick A button press to exit cutscene
-    if (stdControl_bHasJoysticks && stdControl_aJoystickExists[0]) {
+    static int smusherCallCount = 0;
+    smusherCallCount++;
+    if (smusherCallCount % 60 == 1) { // Print every ~1 second
+        printf("CUTSCENE_A_DEBUG: jkCutscene_smusher_process() called (count=%d), joystick state: bHasJoysticks=%d, aJoystickExists[0]=%d\n", 
+               smusherCallCount, stdControl_bHasJoysticks, stdControl_aJoystickExists[0]);
+    }
+    
+    if (stdControl_aJoystickExists[0]) { // Removed bHasJoysticks dependency
         int aButtonVal = 0;
         stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
+        
+        // Debug A button state
+        if (smusherCallCount % 30 == 1) { // Print every ~0.5 seconds
+            printf("CUTSCENE_A_DEBUG: Smusher - A button raw: aButtonVal=%d\n", aButtonVal);
+        }
+        
         if (aButtonVal) {
-            printf("DEBUG_SMUSHER: A button pressed in smusher_process, ending cutscene\n");
+            printf("CUTSCENE_A_DEBUG: A button pressed in smusher_process, ending cutscene\n");
             return 1; // Return 1 to indicate video finished
         }
     }
