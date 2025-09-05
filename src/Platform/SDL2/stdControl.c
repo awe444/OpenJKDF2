@@ -883,8 +883,8 @@ void stdControl_ReadControls()
     uint32_t currentTime = SDL_GetTicks();
     
     if (currentTime - debugTimer > 2000) {
-        printf("DEBUG_CUTSCENE: stdControl_ReadControls() executing - bHasJoysticks=%d, aJoystickExists[0]=%d, numJoysticks=%d\n", 
-               stdControl_bHasJoysticks, stdControl_aJoystickExists[0], stdControl_numJoysticks);
+        printf("DEBUG_CUTSCENE: stdControl_ReadControls() executing - bHasJoysticks=%d, aJoystickExists[0]=%d, maxJoysticks=%d\n", 
+               stdControl_bHasJoysticks, stdControl_aJoystickExists[0], JK_NUM_JOYSTICKS);
         debugTimer = currentTime;
     }
     
@@ -906,7 +906,7 @@ void stdControl_ReadControls()
     
     // Debug: Check ALL joystick buttons every 500ms to see if any are pressed
     if (currentTime - buttonDebugTimer > 500) {
-        for (int i = 0; i < stdControl_numJoysticks; i++) {
+        for (int i = 0; i < JK_NUM_JOYSTICKS; i++) {
             if (stdControl_aJoystickExists[i]) {
                 printf("DEBUG_CUTSCENE: Checking joystick %d buttons...\n", i);
                 for (int j = 0; j < 16; j++) { // Check first 16 buttons
