@@ -898,18 +898,18 @@ void stdControl_ReadControls()
     static uint32_t debugTimer = 0;
     static uint32_t buttonDebugTimer = 0;
     static uint32_t guiStateDebugTimer = 0;
-    uint32_t currentTime = SDL_GetTicks();
+    uint32_t debugCurrentTime = SDL_GetTicks();
     
-    if (currentTime - debugTimer > 2000) {
+    if (debugCurrentTime - debugTimer > 2000) {
         printf("DEBUG_CUTSCENE: stdControl_ReadControls() executing - bHasJoysticks=%d, aJoystickExists[0]=%d, maxJoysticks=%d\n", 
                stdControl_bHasJoysticks, stdControl_aJoystickExists[0], JK_NUM_JOYSTICKS);
         fflush(stdout);
-        debugTimer = currentTime;
+        debugTimer = debugCurrentTime;
     }
     
     // Debug: Report GUI state every 1 second during cutscenes
     int currentGuiState = jkSmack_GetCurrentGuiState();
-    if (currentTime - guiStateDebugTimer > 1000) {
+    if (debugCurrentTime - guiStateDebugTimer > 1000) {
         if (currentGuiState == JK_GAMEMODE_VIDEO || 
             currentGuiState == JK_GAMEMODE_VIDEO2 || 
             currentGuiState == JK_GAMEMODE_VIDEO3 || 
@@ -922,11 +922,11 @@ void stdControl_ReadControls()
             printf("DEBUG_CUTSCENE: Game GUI state: %d (not in cutscene)\n", currentGuiState);
             fflush(stdout);
         }
-        guiStateDebugTimer = currentTime;
+        guiStateDebugTimer = debugCurrentTime;
     }
     
     // Debug: Check ALL joystick buttons every 500ms to see if any are pressed
-    if (currentTime - buttonDebugTimer > 500) {
+    if (debugCurrentTime - buttonDebugTimer > 500) {
         for (int i = 0; i < JK_NUM_JOYSTICKS; i++) {
             if (stdControl_aJoystickExists[i]) {
                 printf("DEBUG_CUTSCENE: Checking joystick %d buttons...\n", i);
@@ -951,7 +951,7 @@ void stdControl_ReadControls()
             fflush(stdout);
         }
         
-        buttonDebugTimer = currentTime;
+        buttonDebugTimer = debugCurrentTime;
     }
 
     // A button handling for both menus and cutscenes (works regardless of bHasJoysticks)
