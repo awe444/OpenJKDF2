@@ -806,6 +806,40 @@ void stdControl_ReadControls()
         }
     }
     
+    // Process joystick buttons even when bHasJoysticks=0 (e.g., during cutscenes)
+    // This enables A button ESC functionality during video playback
+    if (!stdControl_bHasJoysticks) {
+        for (int i = 0; i < JK_NUM_JOYSTICKS; i++) {
+            if (!stdControl_aJoystickExists[i] || !pJoysticks[i]) continue;
+            
+            uint32_t quirks = stdControl_aJoystickQuirks[i];
+            int numAxes = stdControl_aJoystickNumAxes[i];
+            int numButtons = stdControl_aJoystickMaxButtons[i];
+            int numRealButtons = numButtons - (numAxes * 2);
+            
+            // Process only actual joystick buttons (not axis-derived buttons)
+            for (int j = 0; j < JK_NUM_JOY_BUTTONS + JK_NUM_EXT_JOY_BUTTONS && j < numRealButtons; ++j) {
+                int val = SDL_JoystickGetButton(pJoysticks[i], j);
+
+                if (quirks & QUIRK_NINTENDO_TRIGGER_AXIS_TO_BUTTON) {
+                    if (j == 15) { // Capture
+                        val = SDL_JoystickGetAxis(pJoysticks[i],4) > 0;
+                    }
+                    else if (j == 5) { // Home
+                        val = SDL_JoystickGetAxis(pJoysticks[i],5) > 0;
+                    }
+                }
+                
+                int idx = j + (KEY_JOY1_B1 + JK_JOYSTICK_BUTTON_STRIDE*i);
+                if (j >= JK_NUM_JOY_BUTTONS) {
+                    idx = (j - JK_NUM_JOY_BUTTONS) + (KEY_JOY1_EXT_STARTIDX + (JK_JOYSTICK_EXT_BUTTON_STRIDE*i));
+                }
+                
+                stdControl_SetKeydown(idx, val /* button val */, stdControl_curReadTime);
+            }
+        }
+    }
+    
     // Joystick menu navigation: process left stick movement and A button for GUI menus
     if (stdControl_bHasJoysticks && stdControl_aJoystickExists[0]) {
         
