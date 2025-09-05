@@ -6,6 +6,7 @@
 #include "Main/jkQuakeConsole.h"
 #include "Main/jkSmack.h"
 #include "Main/jkMain.h"
+#include "Main/jkCutscene.h"
 
 #include <SDL.h>
 #include <math.h>
@@ -882,8 +883,8 @@ void stdControl_ReadControls()
         stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
         int currentAButtonState = aButtonVal != 0;
         
-        if (currentAButtonState != prevAButtonState) {
-            // Check if we're in a cutscene or video mode where A button should act like ESC
+        if (currentAButtonState && !prevAButtonState) { // A button just pressed
+            // Check if we're in a cutscene or video mode where A button should skip cutscene
             int currentGuiState = jkSmack_GetCurrentGuiState();
             
             if (currentGuiState == JK_GAMEMODE_VIDEO || 
@@ -893,14 +894,9 @@ void stdControl_ReadControls()
                 currentGuiState == JK_GAMEMODE_CUTSCENE || 
                 currentGuiState == JK_GAMEMODE_MOTS_CUTSCENE) {
                 
-                // In cutscene/video mode: A button acts like ESC key
-                if (currentAButtonState) { // Button pressed
-                    // Simulate ESC key press by setting the key state
-                    stdControl_SetKeydown(DIK_ESCAPE, 1, stdControl_curReadTime);
-                } else { // Button released
-                    // Simulate ESC key release
-                    stdControl_SetKeydown(DIK_ESCAPE, 0, stdControl_curReadTime);
-                }
+                // In cutscene/video mode: A button directly skips cutscene
+                printf("A button pressed - skipping cutscene directly (GUI state: %d)\n", currentGuiState);
+                jkCutscene_sub_421410(); // Directly call cutscene termination function
                 
                 // Prevent GUI code from also processing this A button press
                 stdControl_aKeyInfo[KEY_JOY1_B1] = 0;
@@ -909,8 +905,12 @@ void stdControl_ReadControls()
                 // In menu mode: A button acts like mouse click (only when joystick axes enabled)
                 jkGuiRend_ControllerMouseButton(currentAButtonState);
             }
-            prevAButtonState = currentAButtonState;
+        } else if (!currentAButtonState && prevAButtonState && stdControl_bHasJoysticks) {
+            // A button released in menu mode
+            jkGuiRend_ControllerMouseButton(currentAButtonState);
         }
+        
+        prevAButtonState = currentAButtonState;
     }
     
     stdControl_ReadMouse();
