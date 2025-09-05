@@ -621,23 +621,18 @@ int jkCutscene_smack_related_loops()
         // Update joystick input before reading A button state
         stdControl_ReadControls();
         
+        // Check multiple joystick buttons for A button (typically button 0 or 1)
         int aButtonVal = 0;
-        stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
-        currentAButtonState = aButtonVal != 0;
-        
-        // Debug output for A button raw state every few frames
-        if (debugCallCount % 30 == 1) { // Print every ~0.5 seconds
-            printf("CUTSCENE_A_DEBUG: Smack_loops - KEY_JOY1_B1=%d, aButtonVal=%d, currentState=%d\n", KEY_JOY1_B1, aButtonVal, currentAButtonState);
-            
-            // Check multiple button indices to identify which one is actually pressed
-            for (int btnIdx = 0; btnIdx < 4; btnIdx++) {
-                int testVal = 0;
-                stdControl_ReadKey(KEY_JOY1_B1 + btnIdx, &testVal);
-                if (testVal || debugCallCount % 120 == 1) { // Show pressed buttons always, others every ~2 seconds
-                    printf("CUTSCENE_A_DEBUG: Smack_loops Button index %d (key %d) = %d\n", btnIdx, KEY_JOY1_B1 + btnIdx, testVal);
-                }
+        for (int btnIdx = 0; btnIdx < 4; btnIdx++) {
+            int testVal = 0;
+            stdControl_ReadKey(KEY_JOY1_B1 + btnIdx, &testVal);
+            if (testVal) {
+                aButtonVal = testVal;
+                printf("CUTSCENE_ESC: A button detected on SDL button %d (KEY %d)\n", btnIdx, KEY_JOY1_B1 + btnIdx);
+                break;
             }
         }
+        currentAButtonState = aButtonVal != 0;
         
         // Debug output for A button state changes
         if (currentAButtonState != prevAButtonState) {
@@ -814,14 +809,18 @@ int jkCutscene_Handler(HWND a1, UINT a2, WPARAM a3, LPARAM a4, LRESULT *a5)
         // Update joystick input before reading A button state
         stdControl_ReadControls();
         
+        // Check multiple joystick buttons for A button (typically button 0 or 1)
         int aButtonVal = 0;
-        stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
-        int currentAButtonState = aButtonVal != 0;
-        
-        // Debug A button state
-        if (handlerCallCount % 30 == 1) { // Print every ~0.5 seconds
-            printf("CUTSCENE_A_DEBUG: Handler - A button raw: aButtonVal=%d, currentState=%d\n", aButtonVal, currentAButtonState);
+        for (int btnIdx = 0; btnIdx < 4; btnIdx++) {
+            int testVal = 0;
+            stdControl_ReadKey(KEY_JOY1_B1 + btnIdx, &testVal);
+            if (testVal) {
+                aButtonVal = testVal;
+                printf("CUTSCENE_ESC: A button detected on SDL button %d (KEY %d)\n", btnIdx, KEY_JOY1_B1 + btnIdx);
+                break;
+            }
         }
+        int currentAButtonState = aButtonVal != 0;
         
         if (currentAButtonState && !prevAButtonState) {
             // A button just pressed - simulate ESC key to exit cutscene
@@ -939,25 +938,20 @@ int jkCutscene_smacker_process()
         // Update joystick input before reading A button state
         stdControl_ReadControls();
         
+        // Check multiple joystick buttons for A button (typically button 0 or 1)
         int aButtonVal = 0;
-        stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
-        
-        // Debug A button state and check multiple button indices
-        if (smackerCallCount % 30 == 1) { // Print every ~0.5 seconds
-            printf("CUTSCENE_A_DEBUG: Smacker - KEY_JOY1_B1=%d, aButtonVal=%d\n", KEY_JOY1_B1, aButtonVal);
-            
-            // Check multiple button indices to identify which one is actually pressed
-            for (int btnIdx = 0; btnIdx < 4; btnIdx++) {
-                int testVal = 0;
-                stdControl_ReadKey(KEY_JOY1_B1 + btnIdx, &testVal);
-                if (testVal || smackerCallCount % 120 == 1) { // Show pressed buttons always, others every ~2 seconds
-                    printf("CUTSCENE_A_DEBUG: Button index %d (key %d) = %d\n", btnIdx, KEY_JOY1_B1 + btnIdx, testVal);
-                }
+        for (int btnIdx = 0; btnIdx < 4; btnIdx++) {
+            int testVal = 0;
+            stdControl_ReadKey(KEY_JOY1_B1 + btnIdx, &testVal);
+            if (testVal) {
+                aButtonVal = testVal;
+                printf("CUTSCENE_ESC: A button detected on SDL button %d (KEY %d)\n", btnIdx, KEY_JOY1_B1 + btnIdx);
+                break;
             }
         }
         
         if (aButtonVal) {
-            printf("CUTSCENE_A_DEBUG: A button pressed in smacker_process, ending cutscene\n");
+            printf("CUTSCENE_ESC: A button pressed in smacker_process, ending cutscene\n");
             return 1; // Return 1 to indicate video finished
         }
     }
@@ -1226,16 +1220,20 @@ int jkCutscene_smusher_process()
         // Update joystick input before reading A button state
         stdControl_ReadControls();
         
+        // Check multiple joystick buttons for A button (typically button 0 or 1)
         int aButtonVal = 0;
-        stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
-        
-        // Debug A button state
-        if (smusherCallCount % 30 == 1) { // Print every ~0.5 seconds
-            printf("CUTSCENE_A_DEBUG: Smusher - A button raw: aButtonVal=%d\n", aButtonVal);
+        for (int btnIdx = 0; btnIdx < 4; btnIdx++) {
+            int testVal = 0;
+            stdControl_ReadKey(KEY_JOY1_B1 + btnIdx, &testVal);
+            if (testVal) {
+                aButtonVal = testVal;
+                printf("CUTSCENE_ESC: A button detected on SDL button %d (KEY %d)\n", btnIdx, KEY_JOY1_B1 + btnIdx);
+                break;
+            }
         }
         
         if (aButtonVal) {
-            printf("CUTSCENE_A_DEBUG: A button pressed in smusher_process, ending cutscene\n");
+            printf("CUTSCENE_ESC: A button pressed in smusher_process, ending cutscene\n");
             return 1; // Return 1 to indicate video finished
         }
     }

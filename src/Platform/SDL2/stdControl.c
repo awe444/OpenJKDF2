@@ -809,12 +809,6 @@ void stdControl_ReadControls()
     // Process joystick buttons even when bHasJoysticks=0 (e.g., during cutscenes)
     // This enables A button ESC functionality during video playback
     if (!stdControl_bHasJoysticks) {
-        static int buttonCallCount = 0;
-        buttonCallCount++;
-        if (buttonCallCount % 60 == 1) { // Print every ~1 second
-            printf("CUTSCENE_BUTTON_DEBUG: Processing joystick buttons when bHasJoysticks=0 (call %d)\n", buttonCallCount);
-        }
-        
         for (int i = 0; i < JK_NUM_JOYSTICKS; i++) {
             if (!stdControl_aJoystickExists[i] || !pJoysticks[i]) continue;
             
@@ -822,10 +816,6 @@ void stdControl_ReadControls()
             int numAxes = stdControl_aJoystickNumAxes[i];
             int numButtons = stdControl_aJoystickMaxButtons[i];
             int numRealButtons = numButtons - (numAxes * 2);
-            
-            if (buttonCallCount % 60 == 1) {
-                printf("CUTSCENE_BUTTON_DEBUG: Joystick %d: numButtons=%d, numRealButtons=%d\n", i, numButtons, numRealButtons);
-            }
             
             // Process only actual joystick buttons (not axis-derived buttons)
             for (int j = 0; j < JK_NUM_JOY_BUTTONS + JK_NUM_EXT_JOY_BUTTONS && j < numRealButtons; ++j) {
@@ -843,11 +833,6 @@ void stdControl_ReadControls()
                 int idx = j + (KEY_JOY1_B1 + JK_JOYSTICK_BUTTON_STRIDE*i);
                 if (j >= JK_NUM_JOY_BUTTONS) {
                     idx = (j - JK_NUM_JOY_BUTTONS) + (KEY_JOY1_EXT_STARTIDX + (JK_JOYSTICK_EXT_BUTTON_STRIDE*i));
-                }
-                
-                // Debug button states and show when any button is pressed
-                if (val || (buttonCallCount % 60 == 1 && j < 4)) { // Always show first 4 buttons periodically, or any pressed button
-                    printf("CUTSCENE_BUTTON_DEBUG: SDL button %d = %d -> KEY idx %d (KEY_JOY1_B1=%d)\n", j, val, idx, KEY_JOY1_B1);
                 }
                 
                 stdControl_SetKeydown(idx, val /* button val */, stdControl_curReadTime);
