@@ -627,7 +627,16 @@ int jkCutscene_smack_related_loops()
         
         // Debug output for A button raw state every few frames
         if (debugCallCount % 30 == 1) { // Print every ~0.5 seconds
-            printf("CUTSCENE_A_DEBUG: Smack_loops - A button raw state - aButtonVal=%d, currentState=%d\n", aButtonVal, currentAButtonState);
+            printf("CUTSCENE_A_DEBUG: Smack_loops - KEY_JOY1_B1=%d, aButtonVal=%d, currentState=%d\n", KEY_JOY1_B1, aButtonVal, currentAButtonState);
+            
+            // Check multiple button indices to identify which one is actually pressed
+            for (int btnIdx = 0; btnIdx < 4; btnIdx++) {
+                int testVal = 0;
+                stdControl_ReadKey(KEY_JOY1_B1 + btnIdx, &testVal);
+                if (testVal || debugCallCount % 120 == 1) { // Show pressed buttons always, others every ~2 seconds
+                    printf("CUTSCENE_A_DEBUG: Smack_loops Button index %d (key %d) = %d\n", btnIdx, KEY_JOY1_B1 + btnIdx, testVal);
+                }
+            }
         }
         
         // Debug output for A button state changes
@@ -933,9 +942,18 @@ int jkCutscene_smacker_process()
         int aButtonVal = 0;
         stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
         
-        // Debug A button state
+        // Debug A button state and check multiple button indices
         if (smackerCallCount % 30 == 1) { // Print every ~0.5 seconds
-            printf("CUTSCENE_A_DEBUG: Smacker - A button raw: aButtonVal=%d\n", aButtonVal);
+            printf("CUTSCENE_A_DEBUG: Smacker - KEY_JOY1_B1=%d, aButtonVal=%d\n", KEY_JOY1_B1, aButtonVal);
+            
+            // Check multiple button indices to identify which one is actually pressed
+            for (int btnIdx = 0; btnIdx < 4; btnIdx++) {
+                int testVal = 0;
+                stdControl_ReadKey(KEY_JOY1_B1 + btnIdx, &testVal);
+                if (testVal || smackerCallCount % 120 == 1) { // Show pressed buttons always, others every ~2 seconds
+                    printf("CUTSCENE_A_DEBUG: Button index %d (key %d) = %d\n", btnIdx, KEY_JOY1_B1 + btnIdx, testVal);
+                }
+            }
         }
         
         if (aButtonVal) {
