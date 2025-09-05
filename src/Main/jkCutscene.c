@@ -618,6 +618,9 @@ int jkCutscene_smack_related_loops()
     static int prevAButtonState = 0;
     int currentAButtonState = 0;
     if (stdControl_aJoystickExists[0]) {
+        // Update joystick input before reading A button state
+        stdControl_ReadControls();
+        
         int aButtonVal = 0;
         stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
         currentAButtonState = aButtonVal != 0;
@@ -799,6 +802,9 @@ int jkCutscene_Handler(HWND a1, UINT a2, WPARAM a3, LPARAM a4, LRESULT *a5)
     
     static int prevAButtonState = 0;
     if (stdControl_aJoystickExists[0]) { // Removed bHasJoysticks dependency
+        // Update joystick input before reading A button state
+        stdControl_ReadControls();
+        
         int aButtonVal = 0;
         stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
         int currentAButtonState = aButtonVal != 0;
@@ -921,6 +927,9 @@ int jkCutscene_smacker_process()
     }
     
     if (stdControl_aJoystickExists[0]) { // Removed bHasJoysticks dependency
+        // Update joystick input before reading A button state
+        stdControl_ReadControls();
+        
         int aButtonVal = 0;
         stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
         
@@ -1196,6 +1205,9 @@ int jkCutscene_smusher_process()
     }
     
     if (stdControl_aJoystickExists[0]) { // Removed bHasJoysticks dependency
+        // Update joystick input before reading A button state
+        stdControl_ReadControls();
+        
         int aButtonVal = 0;
         stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
         
