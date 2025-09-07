@@ -697,75 +697,11 @@ void stdControl_ReadControls()
 
     // SIMPLE DEBUG: Function called
     printf("FUNCTION_CALLED: stdControl_ReadControls() executing!\n");
-    fflush(stdout);
-
-    // Debug: Report function entry
-    static uint32_t entryDebugTimer = 0;
-    uint32_t currentTime = SDL_GetTicks();
-    if (currentTime - entryDebugTimer > 2000) {
-        printf("DEBUG_ENTRY: stdControl_ReadControls() called - bControlsActive=%d, console=%d\n", 
-               stdControl_bControlsActive, jkQuakeConsole_bOpen);
-        fflush(stdout);
-        entryDebugTimer = currentTime;
-    }
-
-    // Debug: Report GUI state every 1 second during cutscenes
+    // Get current GUI state and time for cutscene detection
     int currentGuiState = jkSmack_GetCurrentGuiState();
-    static uint32_t guiStateDebugTimer = 0;
-    if (currentTime - guiStateDebugTimer > 1000) {
-        if (currentGuiState == JK_GAMEMODE_VIDEO || 
-            currentGuiState == JK_GAMEMODE_VIDEO2 || 
-            currentGuiState == JK_GAMEMODE_VIDEO3 || 
-            currentGuiState == JK_GAMEMODE_VIDEO4 || 
-            currentGuiState == JK_GAMEMODE_CUTSCENE || 
-            currentGuiState == JK_GAMEMODE_MOTS_CUTSCENE) {
-            printf("DEBUG_CUTSCENE: Game is in cutscene/video mode - GUI state: %d\n", currentGuiState);
-            fflush(stdout);
-        } else {
-            printf("DEBUG_CUTSCENE: Game GUI state: %d (not in cutscene)\n", currentGuiState);
-            fflush(stdout);
-        }
-        guiStateDebugTimer = currentTime;
-    }
+    uint32_t currentTime = SDL_GetTicks();
 
-    // Debug: Check ALL joystick buttons and keyboard keys even when controls are inactive
-    static uint32_t buttonDebugTimer = 0;
-    if (currentTime - buttonDebugTimer > 500) {
-        printf("DEBUG_INPUT: Checking input (controls active: %d) - joystick exists: %d\n", 
-               stdControl_bControlsActive, stdControl_aJoystickExists[0]);
-        fflush(stdout);
-        
-        // Check joystick buttons using raw SDL calls (bypasses stdControl_ReadKey which returns 0 when controls inactive)
-        for (int i = 0; i < JK_NUM_JOYSTICKS; i++) {
-            if (stdControl_aJoystickExists[i] && pJoysticks[i]) {
-                printf("DEBUG_INPUT: Checking joystick %d with %d buttons...\n", i, 16);
-                fflush(stdout);
-                for (int j = 0; j < 16; j++) { // Check first 16 buttons
-                    int buttonVal = SDL_JoystickGetButton(pJoysticks[i], j);
-                    if (buttonVal != 0) {
-                        printf("DEBUG_INPUT: Joystick %d button %d is pressed! SDL Value: %d\n", 
-                               i, j, buttonVal);
-                        fflush(stdout);
-                    }
-                }
-            } else {
-                printf("DEBUG_INPUT: Skipping joystick %d - exists:%d, pointer:%p\n", 
-                       i, stdControl_aJoystickExists[i], pJoysticks[i]);
-                fflush(stdout);
-            }
-        }
-        
-        // Check ESC key using raw keyboard state (bypasses stdControl_ReadKey)
-        const Uint8 *keyState = SDL_GetKeyboardState(NULL);
-        if (keyState[SDL_SCANCODE_ESCAPE]) {
-            printf("DEBUG_INPUT: ESC key is pressed! SDL Value: 1\n");
-            fflush(stdout);
-        }
-        
-        buttonDebugTimer = currentTime;
-    }
-
-    // A button handling for cutscenes - try multiple button indices and alternative polling
+    // A button handling for cutscenes - try multiple button indices
     if (stdControl_aJoystickExists[0] && pJoysticks[0]) {
         static int prevAButtonState = 0;
         int currentAButtonState = 0;
@@ -775,32 +711,11 @@ void stdControl_ReadControls()
             int buttonVal = SDL_JoystickGetButton(pJoysticks[0], buttonIdx);
             if (buttonVal) {
                 currentAButtonState = 1;
-                printf("DEBUG_CUTSCENE: Button %d is pressed (value: %d)\n", buttonIdx, buttonVal);
-                fflush(stdout);
                 break;
             }
         }
         
-        // Debug: Always report A button status every few seconds
-        static uint32_t aButtonStatusTimer = 0;
-        if (currentTime - aButtonStatusTimer > 2000) {
-            printf("DEBUG_CUTSCENE: Multi-button status - any pressed: %d, joystick exists: %d\n", 
-                   currentAButtonState, stdControl_aJoystickExists[0]);
-            fflush(stdout);
-            aButtonStatusTimer = currentTime;
-        }
-        
-        // Debug: Report button state changes
-        if (currentAButtonState != prevAButtonState) {
-            printf("DEBUG_CUTSCENE: Button state changed - was: %d, now: %d\n", 
-                   prevAButtonState, currentAButtonState);
-            fflush(stdout);
-        }
-        
         if (currentAButtonState && !prevAButtonState) { // Any button just pressed
-            printf("DEBUG_CUTSCENE: Controller button PRESSED - checking GUI state...\n");
-            fflush(stdout);
-            
             if (currentGuiState == JK_GAMEMODE_VIDEO || 
                 currentGuiState == JK_GAMEMODE_VIDEO2 || 
                 currentGuiState == JK_GAMEMODE_VIDEO3 || 
@@ -809,12 +724,7 @@ void stdControl_ReadControls()
                 currentGuiState == JK_GAMEMODE_MOTS_CUTSCENE) {
                 
                 // In cutscene/video mode: any controller button directly skips cutscene
-                printf("DEBUG_CUTSCENE: Controller button pressed - TRIGGERING CUTSCENE SKIP! (GUI state: %d)\n", currentGuiState);
-                printf("DEBUG_CUTSCENE: Calling jkCutscene_sub_421410()...\n");
-                fflush(stdout);
                 jkCutscene_sub_421410(); // Directly call cutscene termination function
-                printf("DEBUG_CUTSCENE: jkCutscene_sub_421410() call completed\n");
-                fflush(stdout);
                 
                 // Clear all joystick button states to prevent GUI processing
                 for (int i = 0; i < 16; i++) {
@@ -822,9 +732,6 @@ void stdControl_ReadControls()
                     stdControl_aKeyInfo[keyIdx] = 0;
                     stdControl_aInput2[keyIdx] = 0;
                 }
-            } else {
-                printf("DEBUG_CUTSCENE: Controller button pressed but not in cutscene mode (GUI state: %d)\n", currentGuiState);
-                fflush(stdout);
             }
         }
         prevAButtonState = currentAButtonState;
@@ -834,10 +741,6 @@ void stdControl_ReadControls()
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_JOYBUTTONDOWN) {
-            printf("DEBUG_CUTSCENE: SDL_JOYBUTTONDOWN event - joystick: %d, button: %d\n", 
-                   event.jbutton.which, event.jbutton.button);
-            fflush(stdout);
-            
             if (currentGuiState == JK_GAMEMODE_VIDEO || 
                 currentGuiState == JK_GAMEMODE_VIDEO2 || 
                 currentGuiState == JK_GAMEMODE_VIDEO3 || 
@@ -845,8 +748,6 @@ void stdControl_ReadControls()
                 currentGuiState == JK_GAMEMODE_CUTSCENE || 
                 currentGuiState == JK_GAMEMODE_MOTS_CUTSCENE) {
                 
-                printf("DEBUG_CUTSCENE: SDL joystick event during cutscene - SKIPPING!\n");
-                fflush(stdout);
                 jkCutscene_sub_421410();
             }
         }
@@ -864,13 +765,6 @@ void stdControl_ReadControls()
     }
 
     if (!stdControl_bControlsActive) {
-        // Debug: Report early return due to controls inactive
-        static uint32_t inactiveDebugTimer = 0;
-        if (currentTime - inactiveDebugTimer > 5000) {
-            printf("DEBUG_ENTRY: Early return - controls not active!\n");
-            fflush(stdout);
-            inactiveDebugTimer = currentTime;
-        }
         return;
     }
     if (jkQuakeConsole_bOpen) return; // Hijack input to console
@@ -1039,7 +933,7 @@ void stdControl_ReadControls()
             
             // Convert to pixel deltas
             if (nx != 0.0f || ny != 0.0f) {
-                float speedPxPerSec = 1100.0f;
+                float speedPxPerSec = 550.0f;  // Reduced from 1100.0f (2x less sensitive)
                 float dt = stdControl_msDelta / 1000.0f;
                 
                 int mdx = (int)(nx * speedPxPerSec * dt);
