@@ -765,31 +765,40 @@ void stdControl_ReadControls()
         buttonDebugTimer = currentTime;
     }
 
-    // A button handling for cutscenes (works even when controls are inactive)
+    // A button handling for cutscenes - try multiple button indices and alternative polling
     if (stdControl_aJoystickExists[0] && pJoysticks[0]) {
         static int prevAButtonState = 0;
-        // Use raw SDL call instead of stdControl_ReadKey (which returns 0 when controls inactive)
-        int aButtonVal = SDL_JoystickGetButton(pJoysticks[0], 0); // A button is typically button 0
-        int currentAButtonState = aButtonVal != 0;
+        int currentAButtonState = 0;
+        
+        // Try multiple button indices - A button could be 0, 1, or another index
+        for (int buttonIdx = 0; buttonIdx < 4; buttonIdx++) {
+            int buttonVal = SDL_JoystickGetButton(pJoysticks[0], buttonIdx);
+            if (buttonVal) {
+                currentAButtonState = 1;
+                printf("DEBUG_CUTSCENE: Button %d is pressed (value: %d)\n", buttonIdx, buttonVal);
+                fflush(stdout);
+                break;
+            }
+        }
         
         // Debug: Always report A button status every few seconds
         static uint32_t aButtonStatusTimer = 0;
         if (currentTime - aButtonStatusTimer > 2000) {
-            printf("DEBUG_CUTSCENE: A button status - current: %d, prev: %d, rawSDL: %d, joystick exists: %d\n", 
-                   currentAButtonState, prevAButtonState, aButtonVal, stdControl_aJoystickExists[0]);
+            printf("DEBUG_CUTSCENE: Multi-button status - any pressed: %d, joystick exists: %d\n", 
+                   currentAButtonState, stdControl_aJoystickExists[0]);
             fflush(stdout);
             aButtonStatusTimer = currentTime;
         }
         
-        // Debug: Report A button state changes
+        // Debug: Report button state changes
         if (currentAButtonState != prevAButtonState) {
-            printf("DEBUG_CUTSCENE: A button state changed - was: %d, now: %d, rawSDLVal: %d\n", 
-                   prevAButtonState, currentAButtonState, aButtonVal);
+            printf("DEBUG_CUTSCENE: Button state changed - was: %d, now: %d\n", 
+                   prevAButtonState, currentAButtonState);
             fflush(stdout);
         }
         
-        if (currentAButtonState && !prevAButtonState) { // A button just pressed
-            printf("DEBUG_CUTSCENE: A button PRESSED - checking GUI state...\n");
+        if (currentAButtonState && !prevAButtonState) { // Any button just pressed
+            printf("DEBUG_CUTSCENE: Controller button PRESSED - checking GUI state...\n");
             fflush(stdout);
             
             if (currentGuiState == JK_GAMEMODE_VIDEO || 
@@ -799,23 +808,59 @@ void stdControl_ReadControls()
                 currentGuiState == JK_GAMEMODE_CUTSCENE || 
                 currentGuiState == JK_GAMEMODE_MOTS_CUTSCENE) {
                 
-                // In cutscene/video mode: A button directly skips cutscene
-                printf("DEBUG_CUTSCENE: A button pressed - TRIGGERING CUTSCENE SKIP! (GUI state: %d)\n", currentGuiState);
+                // In cutscene/video mode: any controller button directly skips cutscene
+                printf("DEBUG_CUTSCENE: Controller button pressed - TRIGGERING CUTSCENE SKIP! (GUI state: %d)\n", currentGuiState);
                 printf("DEBUG_CUTSCENE: Calling jkCutscene_sub_421410()...\n");
                 fflush(stdout);
                 jkCutscene_sub_421410(); // Directly call cutscene termination function
                 printf("DEBUG_CUTSCENE: jkCutscene_sub_421410() call completed\n");
                 fflush(stdout);
                 
-                // Prevent GUI code from also processing this A button press
-                stdControl_aKeyInfo[KEY_JOY1_B1] = 0;
-                stdControl_aInput2[KEY_JOY1_B1] = 0;
+                // Clear all joystick button states to prevent GUI processing
+                for (int i = 0; i < 16; i++) {
+                    int keyIdx = KEY_JOY1_B1 + i;
+                    stdControl_aKeyInfo[keyIdx] = 0;
+                    stdControl_aInput2[keyIdx] = 0;
+                }
             } else {
-                printf("DEBUG_CUTSCENE: A button pressed but not in cutscene mode (GUI state: %d)\n", currentGuiState);
+                printf("DEBUG_CUTSCENE: Controller button pressed but not in cutscene mode (GUI state: %d)\n", currentGuiState);
                 fflush(stdout);
             }
         }
         prevAButtonState = currentAButtonState;
+    }
+    
+    // Alternative approach: Check SDL events for joystick button presses
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_JOYBUTTONDOWN) {
+            printf("DEBUG_CUTSCENE: SDL_JOYBUTTONDOWN event - joystick: %d, button: %d\n", 
+                   event.jbutton.which, event.jbutton.button);
+            fflush(stdout);
+            
+            if (currentGuiState == JK_GAMEMODE_VIDEO || 
+                currentGuiState == JK_GAMEMODE_VIDEO2 || 
+                currentGuiState == JK_GAMEMODE_VIDEO3 || 
+                currentGuiState == JK_GAMEMODE_VIDEO4 || 
+                currentGuiState == JK_GAMEMODE_CUTSCENE || 
+                currentGuiState == JK_GAMEMODE_MOTS_CUTSCENE) {
+                
+                printf("DEBUG_CUTSCENE: SDL joystick event during cutscene - SKIPPING!\n");
+                fflush(stdout);
+                jkCutscene_sub_421410();
+            }
+        }
+        
+        // Push event back for other systems to process if not consumed
+        if (event.type != SDL_JOYBUTTONDOWN || 
+            (currentGuiState != JK_GAMEMODE_VIDEO && 
+             currentGuiState != JK_GAMEMODE_VIDEO2 && 
+             currentGuiState != JK_GAMEMODE_VIDEO3 && 
+             currentGuiState != JK_GAMEMODE_VIDEO4 && 
+             currentGuiState != JK_GAMEMODE_CUTSCENE && 
+             currentGuiState != JK_GAMEMODE_MOTS_CUTSCENE)) {
+            SDL_PushEvent(&event);
+        }
     }
 
     if (!stdControl_bControlsActive) {

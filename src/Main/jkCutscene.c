@@ -862,7 +862,27 @@ int jkCutscene_smacker_process()
         smackerDebugTimer = currentTime;
     }
 
-    // Check for A button press for cutscene skipping
+    // Direct SDL event polling for joystick button presses - alternative to main input system
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_JOYBUTTONDOWN) {
+            printf("DEBUG_CUTSCENE_SMACKER: Direct SDL joystick button press detected - button %d - SKIPPING!\n", 
+                   event.jbutton.button);
+            fflush(stdout);
+            jkCutscene_sub_421410();
+            return 1; // Signal cutscene finished
+        }
+        if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
+            printf("DEBUG_CUTSCENE_SMACKER: Direct SDL ESC key press detected - SKIPPING!\n");
+            fflush(stdout);
+            jkCutscene_sub_421410();
+            return 1; // Signal cutscene finished
+        }
+        // Push other events back to the queue
+        SDL_PushEvent(&event);
+    }
+
+    // Check for A button press for cutscene skipping (fallback method)
     static int prevAButtonState = 0;
     if (stdControl_aJoystickExists[0]) {
         int aButtonVal = 0;
@@ -1140,7 +1160,27 @@ int jkCutscene_smusher_process()
         smusherDebugTimer = currentTime;
     }
 
-    // Check for A button press for cutscene skipping
+    // Direct SDL event polling for joystick button presses - alternative to main input system
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_JOYBUTTONDOWN) {
+            printf("DEBUG_CUTSCENE_SMUSHER: Direct SDL joystick button press detected - button %d - SKIPPING!\n", 
+                   event.jbutton.button);
+            fflush(stdout);
+            jkCutscene_sub_421410();
+            return 1; // Signal cutscene finished
+        }
+        if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
+            printf("DEBUG_CUTSCENE_SMUSHER: Direct SDL ESC key press detected - SKIPPING!\n");
+            fflush(stdout);
+            jkCutscene_sub_421410();
+            return 1; // Signal cutscene finished
+        }
+        // Push other events back to the queue
+        SDL_PushEvent(&event);
+    }
+
+    // Check for A button press for cutscene skipping (fallback method)
     static int prevAButtonState = 0;
     if (stdControl_aJoystickExists[0]) {
         int aButtonVal = 0;
