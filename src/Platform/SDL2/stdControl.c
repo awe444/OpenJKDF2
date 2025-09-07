@@ -695,6 +695,10 @@ void stdControl_ReadControls()
 {
     flex_d_t khz;
 
+    // SIMPLE DEBUG: Function called
+    printf("FUNCTION_CALLED: stdControl_ReadControls() executing!\n");
+    fflush(stdout);
+
     // Debug: Report function entry
     static uint32_t entryDebugTimer = 0;
     uint32_t currentTime = SDL_GetTicks();
@@ -727,11 +731,15 @@ void stdControl_ReadControls()
     // Debug: Check ALL joystick buttons and keyboard keys even when controls are inactive
     static uint32_t buttonDebugTimer = 0;
     if (currentTime - buttonDebugTimer > 500) {
-        printf("DEBUG_INPUT: Checking input (controls active: %d)...\n", stdControl_bControlsActive);
+        printf("DEBUG_INPUT: Checking input (controls active: %d) - joystick exists: %d\n", 
+               stdControl_bControlsActive, stdControl_aJoystickExists[0]);
+        fflush(stdout);
         
         // Check joystick buttons using raw SDL calls (bypasses stdControl_ReadKey which returns 0 when controls inactive)
         for (int i = 0; i < JK_NUM_JOYSTICKS; i++) {
             if (stdControl_aJoystickExists[i] && pJoysticks[i]) {
+                printf("DEBUG_INPUT: Checking joystick %d with %d buttons...\n", i, 16);
+                fflush(stdout);
                 for (int j = 0; j < 16; j++) { // Check first 16 buttons
                     int buttonVal = SDL_JoystickGetButton(pJoysticks[i], j);
                     if (buttonVal != 0) {
@@ -740,6 +748,10 @@ void stdControl_ReadControls()
                         fflush(stdout);
                     }
                 }
+            } else {
+                printf("DEBUG_INPUT: Skipping joystick %d - exists:%d, pointer:%p\n", 
+                       i, stdControl_aJoystickExists[i], pJoysticks[i]);
+                fflush(stdout);
             }
         }
         
@@ -759,6 +771,15 @@ void stdControl_ReadControls()
         // Use raw SDL call instead of stdControl_ReadKey (which returns 0 when controls inactive)
         int aButtonVal = SDL_JoystickGetButton(pJoysticks[0], 0); // A button is typically button 0
         int currentAButtonState = aButtonVal != 0;
+        
+        // Debug: Always report A button status every few seconds
+        static uint32_t aButtonStatusTimer = 0;
+        if (currentTime - aButtonStatusTimer > 2000) {
+            printf("DEBUG_CUTSCENE: A button status - current: %d, prev: %d, rawSDL: %d, joystick exists: %d\n", 
+                   currentAButtonState, prevAButtonState, aButtonVal, stdControl_aJoystickExists[0]);
+            fflush(stdout);
+            aButtonStatusTimer = currentTime;
+        }
         
         // Debug: Report A button state changes
         if (currentAButtonState != prevAButtonState) {
