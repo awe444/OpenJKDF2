@@ -696,7 +696,6 @@ void stdControl_ReadControls()
     flex_d_t khz;
 
     // SIMPLE DEBUG: Function called
-    printf("FUNCTION_CALLED: stdControl_ReadControls() executing!\n");
     // Get current GUI state and time for cutscene detection
     int currentGuiState = jkSmack_GetCurrentGuiState();
     uint32_t currentTime = SDL_GetTicks();
