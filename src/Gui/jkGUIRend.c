@@ -25,7 +25,8 @@ static uint8_t jkGuiRend_palette[0x300] = {0};
 static WindowDrawHandler_t jkGuiRend_idk2 = 0;
 static WindowDrawHandler_t jkGuiRend_idk = 0;
 static stdSound_buffer_t* jkGuiRend_DsoundHandles[4] = {0};
-static jkGuiMenu *jkGuiRend_activeMenu = NULL;
+static jkGuiMenu *lastActiveMenu = NULL;
+jkGuiMenu *jkGuiRend_activeMenu = NULL;
 static stdVBuffer* jkGuiRend_menuBuffer = NULL;
 static stdVBuffer *jkGuiRend_texture_dword_8561E8 = NULL;
 
@@ -48,6 +49,8 @@ static uint32_t jkGuiRend_mouseLatestMs = 0;
 static HCURSOR jkGuiRend_hCursor = 0;
 
 static int32_t jkGuiRend_CursorVisible = 1;
+static jkGuiRend_WarpFn jkGuiRend_warpCallback = NULL;
+static int jkGuiRend_customCursorEnabled = 0; // Flag to enable custom cursor rendering
 static jkGuiElementHandlers jkGuiRend_elementHandlers[8] = 
 {
     {jkGuiRend_TextButtonEventHandler, jkGuiRend_TextButtonDraw, jkGuiRend_PlayClickSound},
@@ -290,6 +293,9 @@ void jkGuiRend_Paint(jkGuiMenu *menu)
     menu->focusedElement = lastFocused;
     menu->lastMouseDownClickable = lastDown;
 #endif
+    
+    // Draw custom cursor after all GUI elements but before final display
+    jkGuiRend_DrawCustomCursor(menu);
     
     jkGuiRend_FlipAndDraw(menu, 0);
 
@@ -2827,4 +2833,129 @@ void jkGuiRend_UpdateController()
     else if (keyboardShowedLastUpdate) {
         stdControl_HideSystemKeyboard();
     }
+}
+
+// Controller menu navigation helpers
+void jkGuiRend_ControllerMouseMove(int dx, int dy)
+{
+    // Only process if a menu is active
+    if (!jkGuiRend_activeMenu) {
+        return;
+    }
+
+    // Update mouse position with delta movement, clamping to valid screen bounds
+    jkGuiRend_mouseX += dx;
+    jkGuiRend_mouseY += dy;
+    
+    if (jkGuiRend_mouseX < 0) jkGuiRend_mouseX = 0;
+    if (jkGuiRend_mouseY < 0) jkGuiRend_mouseY = 0;
+    
+    // Clamp to screen dimensions if available
+    if (stdDisplay_pCurVideoMode && stdDisplay_pCurVideoMode->format.width > 0 && stdDisplay_pCurVideoMode->format.height > 0) {
+        if (jkGuiRend_mouseX >= (int)stdDisplay_pCurVideoMode->format.width) {
+            jkGuiRend_mouseX = (int)stdDisplay_pCurVideoMode->format.width - 1;
+        }
+        if (jkGuiRend_mouseY >= (int)stdDisplay_pCurVideoMode->format.height) {
+            jkGuiRend_mouseY = (int)stdDisplay_pCurVideoMode->format.height - 1;
+        }
+    } else {
+        // Fallback to reasonable default bounds if video mode not available
+        if (jkGuiRend_mouseX >= 640) jkGuiRend_mouseX = 639;
+        if (jkGuiRend_mouseY >= 480) jkGuiRend_mouseY = 479;
+    }
+
+
+
+    // Update mouse interaction to trigger hover effects
+    jkGuiRend_UpdateMouse();
+    
+    // Warp the OS cursor to match the virtual position if callback is set
+    if (jkGuiRend_warpCallback) {
+        jkGuiRend_warpCallback(jkGuiRend_mouseX, jkGuiRend_mouseY);
+    }
+}
+
+void jkGuiRend_ControllerMouseButton(int down)
+{
+    // Only process if a menu is active
+    if (!jkGuiRend_activeMenu) {
+        return;
+    }
+
+
+
+    if (down) {
+        // Mouse button down: set the down clickable and update visuals
+        jkGuiRend_activeMenu->lastMouseDownClickable = jkGuiRend_activeMenu->lastMouseOverClickable;
+        
+        if (jkGuiRend_activeMenu->lastMouseDownClickable) {
+            // Update visuals to show pressed state
+            jkGuiRend_UpdateAndDrawClickable(jkGuiRend_activeMenu->lastMouseDownClickable, jkGuiRend_activeMenu, 1);
+
+        }
+    } else {
+        // Mouse button up: trigger click if still over the same element
+        if (jkGuiRend_activeMenu->lastMouseDownClickable) {
+            if (jkGuiRend_activeMenu->lastMouseDownClickable == jkGuiRend_activeMenu->lastMouseOverClickable) {
+
+                jkGuiRend_InvokeClicked(jkGuiRend_activeMenu->lastMouseOverClickable, jkGuiRend_activeMenu, jkGuiRend_mouseX, jkGuiRend_mouseY, 1);
+            }
+            
+            // Always restore visuals and clear pressed state
+            if (jkGuiRend_activeMenu->lastMouseDownClickable->bIsVisible) {
+                jkGuiRend_UpdateAndDrawClickable(jkGuiRend_activeMenu->lastMouseDownClickable, jkGuiRend_activeMenu, 1);
+            }
+            jkGuiRend_activeMenu->lastMouseDownClickable = 0;
+        }
+    }
+}
+
+void jkGuiRend_DrawCustomCursor(jkGuiMenu *menu)
+{
+    // Only draw custom cursor if enabled and menu is active
+    if (!jkGuiRend_customCursorEnabled || !menu || !jkGuiRend_menuBuffer) {
+        return;
+    }
+
+    // Create a red filled rectangle (8x8 pixels) at the current virtual cursor position
+    rdRect cursorRect;
+    cursorRect.x = jkGuiRend_mouseX;
+    cursorRect.y = jkGuiRend_mouseY;
+    cursorRect.width = 8;
+    cursorRect.height = 8;
+
+    // Clamp cursor to screen bounds to prevent rendering outside valid area
+    if (stdDisplay_pCurVideoMode && stdDisplay_pCurVideoMode->format.width > 0 && stdDisplay_pCurVideoMode->format.height > 0) {
+        if (cursorRect.x + cursorRect.width > (int)stdDisplay_pCurVideoMode->format.width) {
+            cursorRect.width = (int)stdDisplay_pCurVideoMode->format.width - cursorRect.x;
+        }
+        if (cursorRect.y + cursorRect.height > (int)stdDisplay_pCurVideoMode->format.height) {
+            cursorRect.height = (int)stdDisplay_pCurVideoMode->format.height - cursorRect.y;
+        }
+    } else {
+        // Fallback to 640x480 bounds
+        if (cursorRect.x + cursorRect.width > 640) {
+            cursorRect.width = 640 - cursorRect.x;
+        }
+        if (cursorRect.y + cursorRect.height > 480) {
+            cursorRect.height = 480 - cursorRect.y;
+        }
+    }
+
+    // Only draw if we have a valid rectangle
+    if (cursorRect.width > 0 && cursorRect.height > 0) {
+        // Use a bright red color (palette index 255 is commonly red/bright)
+        int16_t redColor = 255;
+        jkGuiRend_DrawRect(jkGuiRend_menuBuffer, &cursorRect, redColor);
+    }
+}
+
+void jkGuiRend_EnableCustomCursor(int enable)
+{
+    jkGuiRend_customCursorEnabled = enable;
+}
+
+void jkGuiRend_SetWarpCallback(jkGuiRend_WarpFn fn)
+{
+    jkGuiRend_warpCallback = fn;
 }

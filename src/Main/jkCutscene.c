@@ -18,6 +18,11 @@
 #include "General/stdString.h"
 #include "stdPlatform.h"
 #include "Platform/std3D.h"
+#include "Platform/stdControl.h"
+
+#ifdef SDL2_RENDER
+#include <SDL2/SDL.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -603,6 +608,7 @@ int jkCutscene_smack_related_loops()
     smack_finished = 0;
     if ( !jkCutscene_isRendering )
         return 1;
+    
     if ( !jkCutscene_55AA54 && g_app_suspended )
     {
 #if !defined(SDL2_RENDER) && !defined(TARGET_TWL)
@@ -834,6 +840,35 @@ void jkCutscene_smacker_process_audio()
 
 int jkCutscene_smacker_process()
 {
+    // Direct SDL event polling for joystick button presses - alternative to main input system
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_JOYBUTTONDOWN) {
+            jkCutscene_sub_421410();
+            return 1; // Signal cutscene finished
+        }
+        if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
+            jkCutscene_sub_421410();
+            return 1; // Signal cutscene finished
+        }
+        // Push other events back to the queue
+        SDL_PushEvent(&event);
+    }
+
+    // Check for A button press for cutscene skipping (fallback method)
+    static int prevAButtonState = 0;
+    if (stdControl_aJoystickExists[0]) {
+        int aButtonVal = 0;
+        stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
+        int currentAButtonState = aButtonVal != 0;
+        
+        if (currentAButtonState && !prevAButtonState) { // A button just pressed
+            jkCutscene_sub_421410();
+            return 1; // Signal cutscene finished
+        }
+        prevAButtonState = currentAButtonState;
+    }
+
     if ( !jkCutscene_isRendering )
         return 0;
     if (!std3D_IsReady()) {
@@ -1086,6 +1121,35 @@ skip_audio:
 
 int jkCutscene_smusher_process()
 {
+    // Direct SDL event polling for joystick button presses - alternative to main input system
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_JOYBUTTONDOWN) {
+            jkCutscene_sub_421410();
+            return 1; // Signal cutscene finished
+        }
+        if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
+            jkCutscene_sub_421410();
+            return 1; // Signal cutscene finished
+        }
+        // Push other events back to the queue
+        SDL_PushEvent(&event);
+    }
+
+    // Check for A button press for cutscene skipping (fallback method)
+    static int prevAButtonState = 0;
+    if (stdControl_aJoystickExists[0]) {
+        int aButtonVal = 0;
+        stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
+        int currentAButtonState = aButtonVal != 0;
+        
+        if (currentAButtonState && !prevAButtonState) { // A button just pressed
+            jkCutscene_sub_421410();
+            return 1; // Signal cutscene finished
+        }
+        prevAButtonState = currentAButtonState;
+    }
+
     if ( !jkCutscene_isRendering )
         return 0;
     if (!std3D_IsReady()) {

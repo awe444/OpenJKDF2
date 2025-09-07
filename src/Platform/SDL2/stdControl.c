@@ -4,10 +4,18 @@
 #include "Win95/Window.h"
 #include "stdPlatform.h"
 #include "Main/jkQuakeConsole.h"
+#include "Main/jkSmack.h"
+#include "Main/jkMain.h"
+#include "Main/jkCutscene.h"
 
 #include <SDL.h>
+#include <math.h>
 
 #include "jk.h"
+#include "Gui/jkGUIRend.h"
+
+// External array declarations for input handling
+extern int stdControl_aInput2[JK_NUM_KEYS];
 
 const uint8_t stdControl_aSdlToDik[256] =
 {
@@ -687,8 +695,77 @@ void stdControl_ReadControls()
 {
     flex_d_t khz;
 
-    if (!stdControl_bControlsActive)
+    // SIMPLE DEBUG: Function called
+    // Get current GUI state and time for cutscene detection
+    int currentGuiState = jkSmack_GetCurrentGuiState();
+    uint32_t currentTime = SDL_GetTicks();
+
+    // A button handling for cutscenes - try multiple button indices
+    if (stdControl_aJoystickExists[0] && pJoysticks[0]) {
+        static int prevAButtonState = 0;
+        int currentAButtonState = 0;
+        
+        // Try multiple button indices - A button could be 0, 1, or another index
+        for (int buttonIdx = 0; buttonIdx < 4; buttonIdx++) {
+            int buttonVal = SDL_JoystickGetButton(pJoysticks[0], buttonIdx);
+            if (buttonVal) {
+                currentAButtonState = 1;
+                break;
+            }
+        }
+        
+        if (currentAButtonState && !prevAButtonState) { // Any button just pressed
+            if (currentGuiState == JK_GAMEMODE_VIDEO || 
+                currentGuiState == JK_GAMEMODE_VIDEO2 || 
+                currentGuiState == JK_GAMEMODE_VIDEO3 || 
+                currentGuiState == JK_GAMEMODE_VIDEO4 || 
+                currentGuiState == JK_GAMEMODE_CUTSCENE || 
+                currentGuiState == JK_GAMEMODE_MOTS_CUTSCENE) {
+                
+                // In cutscene/video mode: any controller button directly skips cutscene
+                jkCutscene_sub_421410(); // Directly call cutscene termination function
+                
+                // Clear all joystick button states to prevent GUI processing
+                for (int i = 0; i < 16; i++) {
+                    int keyIdx = KEY_JOY1_B1 + i;
+                    stdControl_aKeyInfo[keyIdx] = 0;
+                    stdControl_aInput2[keyIdx] = 0;
+                }
+            }
+        }
+        prevAButtonState = currentAButtonState;
+    }
+    
+    // Alternative approach: Check SDL events for joystick button presses
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_JOYBUTTONDOWN) {
+            if (currentGuiState == JK_GAMEMODE_VIDEO || 
+                currentGuiState == JK_GAMEMODE_VIDEO2 || 
+                currentGuiState == JK_GAMEMODE_VIDEO3 || 
+                currentGuiState == JK_GAMEMODE_VIDEO4 || 
+                currentGuiState == JK_GAMEMODE_CUTSCENE || 
+                currentGuiState == JK_GAMEMODE_MOTS_CUTSCENE) {
+                
+                jkCutscene_sub_421410();
+            }
+        }
+        
+        // Push event back for other systems to process if not consumed
+        if (event.type != SDL_JOYBUTTONDOWN || 
+            (currentGuiState != JK_GAMEMODE_VIDEO && 
+             currentGuiState != JK_GAMEMODE_VIDEO2 && 
+             currentGuiState != JK_GAMEMODE_VIDEO3 && 
+             currentGuiState != JK_GAMEMODE_VIDEO4 && 
+             currentGuiState != JK_GAMEMODE_CUTSCENE && 
+             currentGuiState != JK_GAMEMODE_MOTS_CUTSCENE)) {
+            SDL_PushEvent(&event);
+        }
+    }
+
+    if (!stdControl_bControlsActive) {
         return;
+    }
     if (jkQuakeConsole_bOpen) return; // Hijack input to console
 
     _memset(stdControl_aInput1, 0, sizeof(int) * JK_NUM_KEYS);
@@ -798,6 +875,94 @@ void stdControl_ReadControls()
             stdControl_SetKeydown((JK_JOYSTICK_BUTTON_STRIDE*i) + KEY_JOY1_HDOWN, !!(hatState & SDL_HAT_DOWN) /* button val */, stdControl_curReadTime);
         }
     }
+    
+    // Process joystick buttons even when bHasJoysticks=0 (e.g., during cutscenes)
+    // This enables A button ESC functionality during video playback
+    if (!stdControl_bHasJoysticks) {
+        for (int i = 0; i < JK_NUM_JOYSTICKS; i++) {
+            if (!stdControl_aJoystickExists[i] || !pJoysticks[i]) continue;
+            
+            uint32_t quirks = stdControl_aJoystickQuirks[i];
+            int numAxes = stdControl_aJoystickNumAxes[i];
+            int numButtons = stdControl_aJoystickMaxButtons[i];
+            int numRealButtons = numButtons - (numAxes * 2);
+            
+            // Process only actual joystick buttons (not axis-derived buttons)
+            for (int j = 0; j < JK_NUM_JOY_BUTTONS + JK_NUM_EXT_JOY_BUTTONS && j < numRealButtons; ++j) {
+                int val = SDL_JoystickGetButton(pJoysticks[i], j);
+
+                if (quirks & QUIRK_NINTENDO_TRIGGER_AXIS_TO_BUTTON) {
+                    if (j == 15) { // Capture
+                        val = SDL_JoystickGetAxis(pJoysticks[i],4) > 0;
+                    }
+                    else if (j == 5) { // Home
+                        val = SDL_JoystickGetAxis(pJoysticks[i],5) > 0;
+                    }
+                }
+                
+                int idx = j + (KEY_JOY1_B1 + JK_JOYSTICK_BUTTON_STRIDE*i);
+                if (j >= JK_NUM_JOY_BUTTONS) {
+                    idx = (j - JK_NUM_JOY_BUTTONS) + (KEY_JOY1_EXT_STARTIDX + (JK_JOYSTICK_EXT_BUTTON_STRIDE*i));
+                }
+                
+                stdControl_SetKeydown(idx, val /* button val */, stdControl_curReadTime);
+            }
+        }
+    }
+    
+    // Joystick menu navigation: process left stick movement for GUI menus (requires bHasJoysticks)
+    if (stdControl_bHasJoysticks && stdControl_aJoystickExists[0]) {
+        
+        // Left stick movement for menu cursor
+        float nx = 0.0f, ny = 0.0f;
+        
+        // Get left stick axis values and normalize
+        if (stdControl_aAxisEnabled[0]) {
+            int rawX = stdControl_aAxisPos[AXIS_JOY1_X];
+            int rawY = stdControl_aAxisPos[AXIS_JOY1_Y];
+            
+            // Normalize to [-1, 1] range (SDL joystick range is typically -32768 to 32767)
+            nx = rawX / 32768.0f;
+            ny = rawY / 32768.0f;
+            
+            // Apply deadzone
+            float deadzone = 0.18f;
+            if (fabs(nx) < deadzone) nx = 0.0f;
+            if (fabs(ny) < deadzone) ny = 0.0f;
+            
+            // Convert to pixel deltas
+            if (nx != 0.0f || ny != 0.0f) {
+                float speedPxPerSec = 550.0f;  // Reduced from 1100.0f (2x less sensitive)
+                float dt = stdControl_msDelta / 1000.0f;
+                
+                int mdx = (int)(nx * speedPxPerSec * dt);
+                int mdy = (int)(ny * speedPxPerSec * dt);
+                
+                if (mdx != 0 || mdy != 0) {
+                    jkGuiRend_ControllerMouseMove(mdx, mdy);
+                }
+            }
+        }
+    }
+    
+    // A button menu handling (only when controls are active and not in cutscenes)
+    if (stdControl_bHasJoysticks && stdControl_aJoystickExists[0]) {
+        static int prevMenuAButtonState = 0;
+        int aButtonVal = 0;
+        stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
+        int currentMenuAButtonState = aButtonVal != 0;
+        
+        if (currentMenuAButtonState && !prevMenuAButtonState) {
+            // A button pressed in menu mode
+            jkGuiRend_ControllerMouseButton(1);
+        } else if (!currentMenuAButtonState && prevMenuAButtonState) {
+            // A button released in menu mode
+            jkGuiRend_ControllerMouseButton(0);
+        }
+        
+        prevMenuAButtonState = currentMenuAButtonState;
+    }
+    
     stdControl_ReadMouse();
     stdControl_msLast = stdControl_curReadTime;
 }

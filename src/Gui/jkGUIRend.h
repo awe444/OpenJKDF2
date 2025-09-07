@@ -81,8 +81,13 @@
 #define FOCUS_DOWN  (3)
 #define FOCUS_NONE  (4)
 
+
+
 extern int32_t jkGuiRend_thing_five;
 extern int32_t jkGuiRend_thing_four;
+
+// External access to active menu for joystick navigation
+extern jkGuiMenu *jkGuiRend_activeMenu;
 
 void jkGuiRend_CopyVBuffer(jkGuiMenu *menu, rdRect *rect);
 void jkGuiRend_SetPalette(uint8_t* pal);
@@ -156,5 +161,19 @@ void jkGuiRend_TextButtonDraw(jkGuiElement *element, jkGuiMenu *menu, stdVBuffer
 
 void jkGuiRend_FocusElementDir(jkGuiMenu *pMenu, int32_t dir);
 void jkGuiRend_UpdateController();
+
+// Controller menu navigation helpers
+void jkGuiRend_ControllerMouseMove(int dx, int dy);
+void jkGuiRend_ControllerMouseButton(int down);
+
+// OS-cursor sync: platform warp callback registration
+// x and y are in menu coordinate space (typically 640x480 logical),
+// the platform implementation should translate to window pixel coordinates if needed.
+typedef void (*jkGuiRend_WarpFn)(int x, int y);
+void jkGuiRend_SetWarpCallback(jkGuiRend_WarpFn fn);
+
+// Custom cursor rendering for Wayland compatibility
+void jkGuiRend_DrawCustomCursor(jkGuiMenu *menu);
+void jkGuiRend_EnableCustomCursor(int enable);
 
 #endif // _JKGUIREND_H

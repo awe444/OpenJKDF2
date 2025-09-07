@@ -6,6 +6,7 @@
 #include "Main/jkMain.h"
 #include "Main/jkGame.h"
 #include "Gui/jkGUI.h"
+#include "Gui/jkGUIRend.h"
 #include "Win95/stdDisplay.h"
 #include "World/jkPlayer.h"
 #include "Platform/stdControl.h"
@@ -24,6 +25,7 @@
 
 #include <fcntl.h> 
 #include <stdio.h>
+#include <stdlib.h>
 #ifndef _WIN32
 #include <unistd.h>
 #endif //!_WIN32
@@ -736,6 +738,51 @@ void Window_SdlUpdate()
                 break;
             }
 
+            case SDL_JOYAXISMOTION: {
+                // Handle joystick axis motion for menu navigation (only in menus)
+                if (jkGuiRend_activeMenu && event.jaxis.which == 0) { // Only first joystick
+                    const int AXIS_THRESHOLD = 8000; // Dead zone threshold
+                    const float SENSITIVITY = 5.0f;  // Mouse movement sensitivity
+                    
+                    if (event.jaxis.axis == 0) { // X axis (left stick horizontal)
+                        if (abs(event.jaxis.value) > AXIS_THRESHOLD) {
+                            int dx = (int)(event.jaxis.value * SENSITIVITY / 32767.0f);
+                            if (dx != 0) {
+                                jkGuiRend_ControllerMouseMove(dx, 0);
+                            }
+                        }
+                    } else if (event.jaxis.axis == 1) { // Y axis (left stick vertical)
+                        if (abs(event.jaxis.value) > AXIS_THRESHOLD) {
+                            int dy = (int)(event.jaxis.value * SENSITIVITY / 32767.0f);
+                            if (dy != 0) {
+                                jkGuiRend_ControllerMouseMove(0, dy);
+                            }
+                        }
+                    }
+                }
+                break;
+            }
+
+            case SDL_JOYBUTTONDOWN: {
+                // Handle joystick button press for menu navigation (only in menus)
+                if (jkGuiRend_activeMenu && event.jbutton.which == 0) { // Only first joystick
+                    if (event.jbutton.button == 0) { // A button (typically button 0)
+                        jkGuiRend_ControllerMouseButton(1); // Button down
+                    }
+                }
+                break;
+            }
+
+            case SDL_JOYBUTTONUP: {
+                // Handle joystick button release for menu navigation (only in menus)
+                if (jkGuiRend_activeMenu && event.jbutton.which == 0) { // Only first joystick
+                    if (event.jbutton.button == 0) { // A button (typically button 0)
+                        jkGuiRend_ControllerMouseButton(0); // Button up
+                    }
+                }
+                break;
+            }
+
             case SDL_TEXTINPUT:
                 for (int i = 0; i < _strlen(event.text.text); i++)
                 {
@@ -1240,6 +1287,12 @@ void Window_RecreateSDL2Window()
     SDL_GL_GetDrawableSize(displayWindow, &Window_xSize, &Window_ySize);
     SDL_GetWindowSize(displayWindow, &Window_screenXSize, &Window_screenYSize);
 
+    // Forward declaration for cursor warp callback
+    void Window_WarpCursor(int x, int y);
+    
+    // Register cursor warp callback for joystick menu navigation
+    jkGuiRend_SetWarpCallback(Window_WarpCursor);
+
     Window_resized = 1;
 }
 
@@ -1479,6 +1532,101 @@ int Window_ShowCursorUnwindowed(int a1)
 int Window_DefaultHandler(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam, void* unused)
 {
     return 0;
+}
+
+// Warp cursor callback for joystick menu navigation
+void Window_WarpCursor(int x, int y)
+{
+    if (displayWindow) {
+        // Update the Window layer's menu mouse coordinates to stay in sync
+        Window_menu_mouseX = x;
+        Window_menu_mouseY = y;
+        
+        // Check SDL video driver to handle Wayland/compositor limitations
+        const char* videoDriver = SDL_GetCurrentVideoDriver();
+        
+        // Transform from 640x480 logical coordinates to screen pixel coordinates
+        // This matches the inverse of the transformation in Window_HandleMouseMove()
+        int screenX, screenY;
+        
+        if (!jkGame_isDDraw) {
+            // Same transformation logic as in Window_HandleMouseMove, but reversed
+            flex_t menu_x = ((flex_t)Window_screenXSize - ((flex_t)Window_screenYSize * (640.0 / 480.0))) / 2.0;
+            flex_t menu_w = ((flex_t)Window_screenYSize * (640.0 / 480.0));
+            
+            // Reverse: Window_mouseX = (int)(((fX - menu_x) / (flex_t)menu_w) * 640.0);
+            // So: fX = (Window_mouseX / 640.0) * menu_w + menu_x
+            screenX = (int)((x / 640.0) * menu_w + menu_x);
+            
+            // Reverse: Window_mouseY = (int)((fY / (flex_t)Window_screenYSize) * 480.0);
+            // So: fY = (Window_mouseY / 480.0) * Window_screenYSize
+            screenY = (int)((y / 480.0) * Window_screenYSize);
+            
+            // Clamp coordinates to valid window bounds to avoid out-of-bounds warping
+            if (screenX < 0) screenX = 0;
+            if (screenY < 0) screenY = 0;
+            if (screenX >= Window_screenXSize) screenX = Window_screenXSize - 1;
+            if (screenY >= Window_screenYSize) screenY = Window_screenYSize - 1;
+        } else {
+            // In non-windowed mode, coordinates might be 1:1
+            screenX = x;
+            screenY = y;
+        }
+        
+        // Get current mouse position before warping for verification
+        int mouseX_before, mouseY_before;
+        SDL_GetMouseState(&mouseX_before, &mouseY_before);
+
+        // Try cursor warping - for Wayland this may fail due to compositor restrictions
+        if (videoDriver && strcmp(videoDriver, "wayland") == 0) {
+            // Attempt simple cursor warping for Wayland
+            SDL_WarpMouseInWindow(displayWindow, screenX, screenY);
+            
+            // Check if warping succeeded
+            SDL_PumpEvents();
+            int mouseX_after, mouseY_after;
+            SDL_GetMouseState(&mouseX_after, &mouseY_after);
+            
+            if (abs(mouseX_after - screenX) <= 3 && abs(mouseY_after - screenY) <= 3) {
+                // Cursor warping succeeded, disable custom cursor
+                jkGuiRend_EnableCustomCursor(0);
+            } else {
+                // Wayland cursor warping failed due to compositor restrictions
+                // Enable custom cursor rendering for visual feedback
+                jkGuiRend_EnableCustomCursor(1);
+                
+                // Generate synthetic mouse motion event to keep virtual cursor in sync
+                SDL_Event synthetic;
+                synthetic.type = SDL_MOUSEMOTION;
+                synthetic.motion.windowID = SDL_GetWindowID(displayWindow);
+                synthetic.motion.which = SDL_TOUCH_MOUSEID;
+                synthetic.motion.state = 0;
+                synthetic.motion.x = screenX;
+                synthetic.motion.y = screenY;
+                synthetic.motion.xrel = screenX - mouseX_before;
+                synthetic.motion.yrel = screenY - mouseY_before;
+                SDL_PushEvent(&synthetic);
+            }
+        } else {
+            // Non-Wayland systems (X11, KMS, etc.) - use standard approach
+            // Disable custom cursor since OS cursor warping should work
+            jkGuiRend_EnableCustomCursor(0);
+            
+            SDL_WarpMouseInWindow(displayWindow, screenX, screenY);
+            
+            // Generate synthetic event for consistency
+            SDL_Event synthetic;
+            synthetic.type = SDL_MOUSEMOTION;
+            synthetic.motion.windowID = SDL_GetWindowID(displayWindow);
+            synthetic.motion.which = SDL_TOUCH_MOUSEID;
+            synthetic.motion.state = 0;
+            synthetic.motion.x = screenX;
+            synthetic.motion.y = screenY;
+            synthetic.motion.xrel = screenX - mouseX_before;
+            synthetic.motion.yrel = screenY - mouseY_before;
+            SDL_PushEvent(&synthetic);
+        }
+    }
 }
 
 int Window_MessageLoop()
