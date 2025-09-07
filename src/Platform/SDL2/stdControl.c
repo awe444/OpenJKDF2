@@ -729,27 +729,24 @@ void stdControl_ReadControls()
     if (currentTime - buttonDebugTimer > 500) {
         printf("DEBUG_INPUT: Checking input (controls active: %d)...\n", stdControl_bControlsActive);
         
-        // Check joystick buttons
+        // Check joystick buttons using raw SDL calls (bypasses stdControl_ReadKey which returns 0 when controls inactive)
         for (int i = 0; i < JK_NUM_JOYSTICKS; i++) {
-            if (stdControl_aJoystickExists[i]) {
+            if (stdControl_aJoystickExists[i] && pJoysticks[i]) {
                 for (int j = 0; j < 16; j++) { // Check first 16 buttons
-                    int buttonKey = KEY_JOY1_B1 + JK_JOYSTICK_BUTTON_STRIDE*i + j;
-                    int buttonVal = 0;
-                    stdControl_ReadKey(buttonKey, &buttonVal);
+                    int buttonVal = SDL_JoystickGetButton(pJoysticks[i], j);
                     if (buttonVal != 0) {
-                        printf("DEBUG_INPUT: Joystick %d button %d (key %d) is pressed! Value: %d\n", 
-                               i, j, buttonKey, buttonVal);
+                        printf("DEBUG_INPUT: Joystick %d button %d is pressed! SDL Value: %d\n", 
+                               i, j, buttonVal);
                         fflush(stdout);
                     }
                 }
             }
         }
         
-        // Check ESC key
-        int escVal = 0;
-        stdControl_ReadKey(DIK_ESCAPE, &escVal);
-        if (escVal != 0) {
-            printf("DEBUG_INPUT: ESC key is pressed! Value: %d\n", escVal);
+        // Check ESC key using raw keyboard state (bypasses stdControl_ReadKey)
+        const Uint8 *keyState = SDL_GetKeyboardState(NULL);
+        if (keyState[SDL_SCANCODE_ESCAPE]) {
+            printf("DEBUG_INPUT: ESC key is pressed! SDL Value: 1\n");
             fflush(stdout);
         }
         
@@ -757,15 +754,15 @@ void stdControl_ReadControls()
     }
 
     // A button handling for cutscenes (works even when controls are inactive)
-    if (stdControl_aJoystickExists[0]) {
+    if (stdControl_aJoystickExists[0] && pJoysticks[0]) {
         static int prevAButtonState = 0;
-        int aButtonVal = 0;
-        stdControl_ReadKey(KEY_JOY1_B1, &aButtonVal);
+        // Use raw SDL call instead of stdControl_ReadKey (which returns 0 when controls inactive)
+        int aButtonVal = SDL_JoystickGetButton(pJoysticks[0], 0); // A button is typically button 0
         int currentAButtonState = aButtonVal != 0;
         
         // Debug: Report A button state changes
         if (currentAButtonState != prevAButtonState) {
-            printf("DEBUG_CUTSCENE: A button state changed - was: %d, now: %d, rawVal: %d\n", 
+            printf("DEBUG_CUTSCENE: A button state changed - was: %d, now: %d, rawSDLVal: %d\n", 
                    prevAButtonState, currentAButtonState, aButtonVal);
             fflush(stdout);
         }
