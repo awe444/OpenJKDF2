@@ -572,7 +572,7 @@ int jkGuiJoystick_EnumFunc(int32_t inputFuncIdx, const char *pInputFuncStr, uint
     v9 = jkGuiJoystick_waIdk2;
     if ( (flags & 1) == 0 )
         return 1;
-    v10 = jkStrings_GetUniString(pInputFuncStr);
+    v10 = jkStrings_GetUniStringWithFallback(pInputFuncStr);
     v16 = v10;
     if ( !v10 )
         return 1;
