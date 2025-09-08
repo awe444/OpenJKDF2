@@ -315,6 +315,10 @@ int jkGuiSaveLoad_Show(int bIsSave)
     jkGuiSaveLoad_PopulateInfo(0);
     _wcsncpy(jkGuiSaveLoad_word_559830, &jkGuiSaveLoad_word_559C54[8], 0xFFu);
     jkGuiSaveLoad_word_559830[255] = 0;
+    // If save menu and save name is empty, prepopulate with "Player 1"
+    if (bIsSave && _wcslen(jkGuiSaveLoad_word_559830) == 0) {
+        _wcscpy(jkGuiSaveLoad_word_559830, L"Player 1");
+    }
     while ( 1 )
     {
         while ( 1 )
