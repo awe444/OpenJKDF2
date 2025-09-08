@@ -36,7 +36,7 @@ static int sithControl_008d7f54 = 0;
 static int sithControl_008d7f58 = 0;
 static int sithControl_008d7f5c = 0;
 
-static const char *sithControl_aFunctionStrs[75] =
+static const char *sithControl_aFunctionStrs[INPUT_FUNC_MAX] =
 {
     "FORWARD",
     "TURN",
@@ -123,7 +123,7 @@ int sithControl_Startup()
     if ( stdControl_Startup() )
     {
         sithControl_InitFuncToControlType();
-        _memset(sithControl_aInputFuncToKeyinfo, 0, sizeof(stdControlKeyInfo) * 74);
+        _memset(sithControl_aInputFuncToKeyinfo, 0, sizeof(stdControlKeyInfo) * INPUT_FUNC_MAX);
         stdControl_Reset();
         sithControl_bInitted = 1;
         return 1;
@@ -533,7 +533,7 @@ int sithControl_ReadConf()
     unsigned int dxKeyNum_; // [esp+18h] [ebp-8h]
     int v21; // [esp+1Ch] [ebp-4h]
 
-    _memset(sithControl_aInputFuncToKeyinfo, 0, sizeof(stdControlKeyInfo) * 74);
+    _memset(sithControl_aInputFuncToKeyinfo, 0, sizeof(stdControlKeyInfo) * INPUT_FUNC_MAX);
     stdControl_Reset();
     if ( !stdConffile_ReadArgs()
       || !stdConffile_entry.numArgs
@@ -1799,7 +1799,7 @@ void sithControl_InputInit()
     stdControlKeyInfoEntry *v7; // eax
     stdControlKeyInfoEntry *v8; // eax
 
-    _memset(sithControl_aInputFuncToKeyinfo, 0, sizeof(stdControlKeyInfo) * 74);
+    _memset(sithControl_aInputFuncToKeyinfo, 0, sizeof(stdControlKeyInfo) * INPUT_FUNC_MAX);
 #ifndef TARGET_TWL
     stdControl_Reset();
 #endif
@@ -2023,7 +2023,7 @@ void sithControl_sub_4D7670()
 LABEL_17:
         ;
     }
-    while ( v3 || ++v0 < &sithControl_aInputFuncToKeyinfo[74] );
+    while ( v3 || ++v0 < &sithControl_aInputFuncToKeyinfo[INPUT_FUNC_MAX] );
 
     v10 = sithControl_MapAxisFunc(INPUT_FUNC_TURN, AXIS_MOUSE_X, 0xCu);
     if ( v10 )
@@ -2098,7 +2098,7 @@ void sithControl_sub_4D7350()
 LABEL_13:
         ;
     }
-    while ( v3 || ++v0 < &sithControl_aInputFuncToKeyinfo[74] );
+    while ( v3 || ++v0 < &sithControl_aInputFuncToKeyinfo[INPUT_FUNC_MAX] );
     sithControl_MapDefaults();
 }
 
@@ -2175,7 +2175,7 @@ void sithControl_JoyInputInit()
 LABEL_17:
         ;
     }
-    while ( v3 || ++v0 < &sithControl_aInputFuncToKeyinfo[74] );
+    while ( v3 || ++v0 < &sithControl_aInputFuncToKeyinfo[INPUT_FUNC_MAX] );
     sithControl_MapAxisFunc(INPUT_FUNC_FORWARD, AXIS_JOY1_Y, 4u);
     sithControl_MapAxisFunc(INPUT_FUNC_TURN, AXIS_JOY1_X, 4u);
     if ( (sithControl_inputFuncToControlType[10] & 1) != 0 && sithControl_aInputFuncToKeyinfo[10].numEntries != 8 )
