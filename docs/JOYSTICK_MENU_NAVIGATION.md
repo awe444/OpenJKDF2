@@ -1,10 +1,10 @@
-# Joystick Menu Navigation and Control
+# Joystick Menu Navigation
 
-This document describes the joystick-driven menu navigation and control features added to OpenJKDF2.
+This document describes the joystick-driven menu navigation feature added to OpenJKDF2.
 
 ## Overview
 
-The joystick menu navigation and control feature allows players to navigate GUI menus and access mappable in-game actions using a game controller on SDL2/Linux platforms.
+The joystick menu navigation and control feature allows players to navigate GUI menus and control in-game actions using a game controller on SDL2/Linux platforms.
 
 ## Controls
 
@@ -12,11 +12,8 @@ The joystick menu navigation and control feature allows players to navigate GUI 
 - **Left Joystick (X/Y axes)**: Move the mouse cursor in menus
 - **A Button (Button 0)**: Left mouse click (press and release)
 
-### In-Game Actions (mappable through Controls GUI)
-- **Open Pause Menu**: Can be mapped to any joystick button through the game's joystick mapping interface
-  - Available in Controls > Joystick settings as "PAUSEMENU" action
-  - Default mapping: None (must be manually assigned)
-  - Coexists with other mappable actions like "Fire 1", "Fire 2", "Next Inventory Item", etc.
+### In-Game Actions (when not in menus)
+- **Button 11**: Open the pause menu
 
 ## Technical Details
 
@@ -24,23 +21,20 @@ The joystick menu navigation and control feature allows players to navigate GUI 
 
 - `src/Gui/jkGUIRend.h` - Added function declarations and debug toggle
 - `src/Gui/jkGUIRend.c` - Added controller mouse helper functions
-- `src/Win95/Window.c` - SDL joystick event handling for menu navigation
-- `src/types_enums.h` - Added INPUT_FUNC_PAUSEMENU enum value
-- `src/Devices/sithControl.c` - Added pause menu input function processing and mapping
+- `src/Win95/Window.c` - Added SDL joystick event handling
 
 ### Key Functions
 
 - `jkGuiRend_ControllerMouseMove(int dx, int dy)` - Moves the GUI cursor by delta amounts (menu navigation)
 - `jkGuiRend_ControllerMouseButton(int down)` - Triggers mouse button press/release events (menu navigation)
-- `jkMain_do_guistate6()` - Opens the pause menu when PAUSEMENU input function is triggered
-- `sithControl_ReadFunctionMap()` - Checks if input functions are active during gameplay
+- `Window_msg_main_handler()` with `VK_ESCAPE` - Triggers pause menu when Start button is pressed in-game
 
 ### Configuration
 
 - **Dead Zone**: 8000 (out of ±32767)
 - **Sensitivity**: 5.0x multiplier for axis movement
 - **Menu Navigation**: A Button (Button 0) for clicking
-- **Pause Menu**: Mappable through Controls > Joystick GUI (search for "PAUSEMENU" action)
+- **Pause Menu**: Button 11 for opening pause menu
 - **Debug Logging**: Can be enabled by defining `JOY_MENU_DEBUG` in `jkGUIRend.h`
 
 ### Platform Support
@@ -48,7 +42,7 @@ The joystick menu navigation and control feature allows players to navigate GUI 
 - **Target Platform**: SDL2/Linux
 - **Joystick Support**: Uses SDL2 joystick events
 - **Menu Detection**: Menu navigation only active when `jkGuiRend_activeMenu` is not NULL
-- **Action Mapping**: Pause menu uses the standard input mapping system like other game actions
+- **In-Game Actions**: Pause menu trigger active when `jkGuiRend_activeMenu` is NULL
 
 ## Debugging
 
@@ -69,8 +63,3 @@ Debug output will show:
 - Only the first joystick (index 0) is supported
 - Cursor movement is clamped to screen boundaries
 - Button mapping uses SDL button 0 (typically the A button on most controllers)
-
-## Bug Fixes
-
-### Fixed Missing "Open Pause Menu" Action in Joystick GUI
-Fixed an issue where the "Open Pause Menu" action was not appearing in the joystick configuration GUI alongside other mappable actions. The problem was in `sithControl_EnumBindings()` which had a hardcoded loop limit of 74 instead of using `INPUT_FUNC_MAX`. This caused the PAUSEMENU function (at index 74) to be excluded from the joystick mapping interface. The fix updated the loop to iterate through all available input functions using the proper constant.

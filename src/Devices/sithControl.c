@@ -36,7 +36,7 @@ static int sithControl_008d7f54 = 0;
 static int sithControl_008d7f58 = 0;
 static int sithControl_008d7f5c = 0;
 
-static const char *sithControl_aFunctionStrs[INPUT_FUNC_MAX] =
+static const char *sithControl_aFunctionStrs[74] =
 {
     "FORWARD",
     "TURN",
@@ -111,8 +111,7 @@ static const char *sithControl_aFunctionStrs[INPUT_FUNC_MAX] =
     "ACTIVATE28",
     "ACTIVATE29",
     "ACTIVATE30",
-    "ACTIVATE31",
-    "PAUSEMENU"
+    "ACTIVATE31"
 };
 
 int sithControl_Startup()
@@ -123,7 +122,7 @@ int sithControl_Startup()
     if ( stdControl_Startup() )
     {
         sithControl_InitFuncToControlType();
-        _memset(sithControl_aInputFuncToKeyinfo, 0, sizeof(stdControlKeyInfo) * INPUT_FUNC_MAX);
+        _memset(sithControl_aInputFuncToKeyinfo, 0, sizeof(stdControlKeyInfo) * 74);
         stdControl_Reset();
         sithControl_bInitted = 1;
         return 1;
@@ -220,7 +219,6 @@ void sithControl_InitFuncToControlType()
     sithControl_inputFuncToControlType[INPUT_FUNC_PREVWEAPON] = 4 | 1;
     sithControl_inputFuncToControlType[INPUT_FUNC_NEXTWEAPON] = 4 | 1;
     sithControl_inputFuncToControlType[INPUT_FUNC_MAP] = 4 | 1;
-    sithControl_inputFuncToControlType[INPUT_FUNC_PAUSEMENU] = 4 | 1;
     sithControl_inputFuncToControlType[INPUT_FUNC_INCREASE] = 4 | 1;
     sithControl_inputFuncToControlType[INPUT_FUNC_DECREASE] = 4 | 1;
     sithControl_inputFuncToControlType[INPUT_FUNC_MLOOK] = 4 | 1;
@@ -533,7 +531,7 @@ int sithControl_ReadConf()
     unsigned int dxKeyNum_; // [esp+18h] [ebp-8h]
     int v21; // [esp+1Ch] [ebp-4h]
 
-    _memset(sithControl_aInputFuncToKeyinfo, 0, sizeof(stdControlKeyInfo) * INPUT_FUNC_MAX);
+    _memset(sithControl_aInputFuncToKeyinfo, 0, sizeof(stdControlKeyInfo) * 74);
     stdControl_Reset();
     if ( !stdConffile_ReadArgs()
       || !stdConffile_entry.numArgs
@@ -973,10 +971,6 @@ LABEL_39:
                     sithOverlayMap_FuncIncrease();
                 if ( sithControl_ReadFunctionMap(INPUT_FUNC_DECREASE, &input_read) )
                     sithOverlayMap_FuncDecrease();
-
-                sithControl_ReadFunctionMap(INPUT_FUNC_PAUSEMENU, &input_read);
-                if ( (input_read & 1) != 0 )
-                    jkMain_do_guistate6();
             }
         }
         return 0;
@@ -1799,7 +1793,7 @@ void sithControl_InputInit()
     stdControlKeyInfoEntry *v7; // eax
     stdControlKeyInfoEntry *v8; // eax
 
-    _memset(sithControl_aInputFuncToKeyinfo, 0, sizeof(stdControlKeyInfo) * INPUT_FUNC_MAX);
+    _memset(sithControl_aInputFuncToKeyinfo, 0, sizeof(stdControlKeyInfo) * 74);
 #ifndef TARGET_TWL
     stdControl_Reset();
 #endif
@@ -1881,7 +1875,7 @@ stdControlKeyInfo* sithControl_EnumBindings(sithControlEnumFunc_t pfEnumFunction
     v6 = 1;
     v7 = 0;
     v20 = sithControl_aInputFuncToKeyinfo;
-    for (int j = 0; j < INPUT_FUNC_MAX; j++)
+    for (int j = 0; j < 74; j++)
     {
         int typeflags = sithControl_inputFuncToControlType[v7];
 
@@ -2023,7 +2017,7 @@ void sithControl_sub_4D7670()
 LABEL_17:
         ;
     }
-    while ( v3 || ++v0 < &sithControl_aInputFuncToKeyinfo[INPUT_FUNC_MAX] );
+    while ( v3 || ++v0 < &sithControl_aInputFuncToKeyinfo[74] );
 
     v10 = sithControl_MapAxisFunc(INPUT_FUNC_TURN, AXIS_MOUSE_X, 0xCu);
     if ( v10 )
@@ -2098,7 +2092,7 @@ void sithControl_sub_4D7350()
 LABEL_13:
         ;
     }
-    while ( v3 || ++v0 < &sithControl_aInputFuncToKeyinfo[INPUT_FUNC_MAX] );
+    while ( v3 || ++v0 < &sithControl_aInputFuncToKeyinfo[74] );
     sithControl_MapDefaults();
 }
 
@@ -2175,7 +2169,7 @@ void sithControl_JoyInputInit()
 LABEL_17:
         ;
     }
-    while ( v3 || ++v0 < &sithControl_aInputFuncToKeyinfo[INPUT_FUNC_MAX] );
+    while ( v3 || ++v0 < &sithControl_aInputFuncToKeyinfo[74] );
     sithControl_MapAxisFunc(INPUT_FUNC_FORWARD, AXIS_JOY1_Y, 4u);
     sithControl_MapAxisFunc(INPUT_FUNC_TURN, AXIS_JOY1_X, 4u);
     if ( (sithControl_inputFuncToControlType[10] & 1) != 0 && sithControl_aInputFuncToKeyinfo[10].numEntries != 8 )
