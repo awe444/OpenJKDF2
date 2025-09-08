@@ -764,20 +764,34 @@ void Window_SdlUpdate()
             }
 
             case SDL_JOYBUTTONDOWN: {
-                // Handle joystick button press for menu navigation (only in menus)
-                if (jkGuiRend_activeMenu && event.jbutton.which == 0) { // Only first joystick
-                    if (event.jbutton.button == 0) { // A button (typically button 0)
-                        jkGuiRend_ControllerMouseButton(1); // Button down
+                if (event.jbutton.which == 0) { // Only first joystick
+                    if (jkGuiRend_activeMenu) {
+                        // Handle joystick button press for menu navigation (only in menus)
+                        if (event.jbutton.button == 0) { // A button (typically button 0)
+                            jkGuiRend_ControllerMouseButton(1); // Button down
+                        }
+                    } else {
+                        // Handle joystick button press for in-game actions (when not in menus)
+                        if (event.jbutton.button == 7) { // Start button (typically button 7) - opens pause menu
+                            Window_msg_main_handler(g_hWnd, WM_KEYFIRST, VK_ESCAPE, 0);
+                        }
                     }
                 }
                 break;
             }
 
             case SDL_JOYBUTTONUP: {
-                // Handle joystick button release for menu navigation (only in menus)
-                if (jkGuiRend_activeMenu && event.jbutton.which == 0) { // Only first joystick
-                    if (event.jbutton.button == 0) { // A button (typically button 0)
-                        jkGuiRend_ControllerMouseButton(0); // Button up
+                if (event.jbutton.which == 0) { // Only first joystick
+                    if (jkGuiRend_activeMenu) {
+                        // Handle joystick button release for menu navigation (only in menus)
+                        if (event.jbutton.button == 0) { // A button (typically button 0)
+                            jkGuiRend_ControllerMouseButton(0); // Button up
+                        }
+                    } else {
+                        // Handle joystick button release for in-game actions (when not in menus)
+                        if (event.jbutton.button == 7) { // Start button (typically button 7) - pause menu is triggered on press, not release
+                            // No action needed on button release for pause menu
+                        }
                     }
                 }
                 break;
