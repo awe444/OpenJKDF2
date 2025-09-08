@@ -1881,7 +1881,7 @@ stdControlKeyInfo* sithControl_EnumBindings(sithControlEnumFunc_t pfEnumFunction
     v6 = 1;
     v7 = 0;
     v20 = sithControl_aInputFuncToKeyinfo;
-    for (int j = 0; j < 74; j++)
+    for (int j = 0; j < INPUT_FUNC_MAX; j++)
     {
         int typeflags = sithControl_inputFuncToControlType[v7];
 

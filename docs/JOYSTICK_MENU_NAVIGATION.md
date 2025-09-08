@@ -69,3 +69,8 @@ Debug output will show:
 - Only the first joystick (index 0) is supported
 - Cursor movement is clamped to screen boundaries
 - Button mapping uses SDL button 0 (typically the A button on most controllers)
+
+## Bug Fixes
+
+### Fixed Missing "Open Pause Menu" Action in Joystick GUI
+Fixed an issue where the "Open Pause Menu" action was not appearing in the joystick configuration GUI alongside other mappable actions. The problem was in `sithControl_EnumBindings()` which had a hardcoded loop limit of 74 instead of using `INPUT_FUNC_MAX`. This caused the PAUSEMENU function (at index 74) to be excluded from the joystick mapping interface. The fix updated the loop to iterate through all available input functions using the proper constant.
