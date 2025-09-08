@@ -4,12 +4,16 @@ This document describes the joystick-driven menu navigation feature added to Ope
 
 ## Overview
 
-The joystick menu navigation feature allows players to navigate GUI menus using a game controller on SDL2/Linux platforms. This feature only affects menu navigation and does not impact gameplay controls.
+The joystick menu navigation and control feature allows players to navigate GUI menus and control in-game actions using a game controller on SDL2/Linux platforms.
 
 ## Controls
 
+### Menu Navigation (when in menus)
 - **Left Joystick (X/Y axes)**: Move the mouse cursor in menus
 - **A Button (Button 0)**: Left mouse click (press and release)
+
+### In-Game Actions (when not in menus)
+- **Button 11**: Open the pause menu
 
 ## Technical Details
 
@@ -21,20 +25,24 @@ The joystick menu navigation feature allows players to navigate GUI menus using 
 
 ### Key Functions
 
-- `jkGuiRend_ControllerMouseMove(int dx, int dy)` - Moves the GUI cursor by delta amounts
-- `jkGuiRend_ControllerMouseButton(int down)` - Triggers mouse button press/release events
+- `jkGuiRend_ControllerMouseMove(int dx, int dy)` - Moves the GUI cursor by delta amounts (menu navigation)
+- `jkGuiRend_ControllerMouseButton(int down)` - Triggers mouse button press/release events (menu navigation)
+- `Window_msg_main_handler()` with `VK_ESCAPE` - Triggers pause menu when Start button is pressed in-game
 
 ### Configuration
 
 - **Dead Zone**: 8000 (out of ±32767)
 - **Sensitivity**: 5.0x multiplier for axis movement
+- **Menu Navigation**: A Button (Button 0) for clicking
+- **Pause Menu**: Button 11 for opening pause menu
 - **Debug Logging**: Can be enabled by defining `JOY_MENU_DEBUG` in `jkGUIRend.h`
 
 ### Platform Support
 
 - **Target Platform**: SDL2/Linux
 - **Joystick Support**: Uses SDL2 joystick events
-- **Menu Detection**: Only active when `jkGuiRend_activeMenu` is not NULL
+- **Menu Detection**: Menu navigation only active when `jkGuiRend_activeMenu` is not NULL
+- **In-Game Actions**: Pause menu trigger active when `jkGuiRend_activeMenu` is NULL
 
 ## Debugging
 
