@@ -36,7 +36,7 @@ static int sithControl_008d7f54 = 0;
 static int sithControl_008d7f58 = 0;
 static int sithControl_008d7f5c = 0;
 
-static const char *sithControl_aFunctionStrs[74] =
+static const char *sithControl_aFunctionStrs[75] =
 {
     "FORWARD",
     "TURN",
@@ -111,7 +111,8 @@ static const char *sithControl_aFunctionStrs[74] =
     "ACTIVATE28",
     "ACTIVATE29",
     "ACTIVATE30",
-    "ACTIVATE31"
+    "ACTIVATE31",
+    "PAUSEMENU"
 };
 
 int sithControl_Startup()
@@ -219,6 +220,7 @@ void sithControl_InitFuncToControlType()
     sithControl_inputFuncToControlType[INPUT_FUNC_PREVWEAPON] = 4 | 1;
     sithControl_inputFuncToControlType[INPUT_FUNC_NEXTWEAPON] = 4 | 1;
     sithControl_inputFuncToControlType[INPUT_FUNC_MAP] = 4 | 1;
+    sithControl_inputFuncToControlType[INPUT_FUNC_PAUSEMENU] = 4 | 1;
     sithControl_inputFuncToControlType[INPUT_FUNC_INCREASE] = 4 | 1;
     sithControl_inputFuncToControlType[INPUT_FUNC_DECREASE] = 4 | 1;
     sithControl_inputFuncToControlType[INPUT_FUNC_MLOOK] = 4 | 1;
@@ -971,6 +973,10 @@ LABEL_39:
                     sithOverlayMap_FuncIncrease();
                 if ( sithControl_ReadFunctionMap(INPUT_FUNC_DECREASE, &input_read) )
                     sithOverlayMap_FuncDecrease();
+
+                sithControl_ReadFunctionMap(INPUT_FUNC_PAUSEMENU, &input_read);
+                if ( (input_read & 1) != 0 )
+                    jkMain_do_guistate6();
             }
         }
         return 0;
