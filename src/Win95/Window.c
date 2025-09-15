@@ -772,7 +772,7 @@ void Window_SdlUpdate()
                         }
                     } else {
                         // Handle joystick button press for in-game actions (when not in menus)
-                        if (event.jbutton.button == 11) { // Button 11 - opens pause menu
+                        if (event.jbutton.button == 10) { // Button 11 - opens pause menu
                             Window_msg_main_handler(g_hWnd, WM_KEYFIRST, VK_ESCAPE, 0);
                         }
                     }
@@ -789,7 +789,7 @@ void Window_SdlUpdate()
                         }
                     } else {
                         // Handle joystick button release for in-game actions (when not in menus)
-                        if (event.jbutton.button == 11) { // Button 11 - pause menu is triggered on press, not release
+                        if (event.jbutton.button == 10) { // Button 11 - pause menu is triggered on press, not release
                             // No action needed on button release for pause menu
                         }
                     }
