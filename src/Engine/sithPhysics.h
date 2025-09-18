@@ -4,6 +4,9 @@
 #include "types.h"
 #include "globals.h"
 
+// Global thrust scale factor for water currents
+extern flex_t sithPhysics_thrustScale;
+
 #define sithPhysics_FindFloor_ADDR (0x004F5550)
 #define sithPhysics_ThingPhysIdk_inlined_ADDR (0x004F5870)
 #define sithPhysics_ThingTick_ADDR (0x004F5900)
@@ -30,6 +33,8 @@ MATH_FUNC void sithPhysics_ThingPhysGeneral(sithThing *pThing, flex_t deltaSecon
 MATH_FUNC void sithPhysics_ThingPhysPlayer(sithThing *player, flex_t deltaSeconds);
 MATH_FUNC void sithPhysics_ThingPhysUnderwater(sithThing *pThing, flex_t deltaSeconds);
 MATH_FUNC void sithPhysics_ThingPhysAttached(sithThing *pThing, flex_t deltaSeconds);
+
+void sithPhysics_StartupVars();
 
 //static void (*_sithPhysics_ThingPhysAttached)(sithThing *pThing, flex_t deltaSeconds) = (void*)sithPhysics_ThingPhysAttached_ADDR;
 

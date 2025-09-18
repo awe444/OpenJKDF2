@@ -7,7 +7,11 @@
 #include "World/sithThing.h"
 #include "World/sithSector.h"
 #include "World/jkPlayer.h"
+#include "Main/sithCvar.h"
 #include "jk.h"
+
+// Global thrust scale factor for water currents/sector thrust
+flex_t sithPhysics_thrustScale = 1.0;
 
 void sithPhysics_FindFloor(sithThing *pThing, int a3)
 {
@@ -516,7 +520,9 @@ void sithPhysics_ThingPhysGeneral(sithThing *pThing, flex_t deltaSeconds)
         && (pThing->sector->flags & SITH_SECTOR_HASTHRUST) 
         && !(pThing->physicsParams.physflags & SITH_PF_NOTHRUST))
     {
-        rdVector_MultAcc3(&a1a, &pThing->sector->thrust, deltaSeconds);
+        rdVector3 scaledThrust;
+        rdVector_Scale3(&scaledThrust, &pThing->sector->thrust, sithPhysics_thrustScale);
+        rdVector_MultAcc3(&a1a, &scaledThrust, deltaSeconds);
     }
 
     if (pThing->physicsParams.mass != 0.0 
@@ -659,7 +665,9 @@ void sithPhysics_ThingPhysPlayer(sithThing *player, flex_t deltaSeconds)
             if ((player->sector->flags & SITH_SECTOR_HASTHRUST)
                 && !(player->physicsParams.physflags & SITH_PF_NOTHRUST))
             {
-                rdVector_MultAcc3(&a1a, &player->sector->thrust, OLDSTEP_DELTA_50FPS);
+                rdVector3 scaledThrust;
+                rdVector_Scale3(&scaledThrust, &player->sector->thrust, sithPhysics_thrustScale);
+                rdVector_MultAcc3(&a1a, &scaledThrust, OLDSTEP_DELTA_50FPS);
             }
         }
 
@@ -727,7 +735,9 @@ void sithPhysics_ThingPhysUnderwater(sithThing *pThing, flex_t deltaSeconds)
     }
     if ( pThing->physicsParams.mass != 0.0 && pThing->sector && (pThing->sector->flags & SITH_SECTOR_HASTHRUST) && !(pThing->physicsParams.physflags & SITH_PF_NOTHRUST) )
     {
-        rdVector_MultAcc3(&a1a, &pThing->sector->thrust, deltaSeconds);
+        rdVector3 scaledThrust;
+        rdVector_Scale3(&scaledThrust, &pThing->sector->thrust, sithPhysics_thrustScale);
+        rdVector_MultAcc3(&a1a, &scaledThrust, deltaSeconds);
     }
 
     if ( ((pThing->physicsParams.physflags & SITH_PF_WATERSURFACE) == 0 || (pThing->thingflags & SITH_TF_DEAD) != 0) && (pThing->physicsParams.physflags & SITH_PF_USEGRAVITY) != 0 )
@@ -1006,7 +1016,9 @@ void sithPhysics_ThingPhysAttached(sithThing *pThing, flex_t deltaSeconds)
               && (pThing->sector->flags & SITH_SECTOR_HASTHRUST)
               && !(pThing->physicsParams.physflags & SITH_PF_NOTHRUST))
             {
-                rdVector_MultAcc3(&out, &pThing->sector->thrust, deltaSeconds);
+                rdVector3 scaledThrust;
+                rdVector_Scale3(&scaledThrust, &pThing->sector->thrust, sithPhysics_thrustScale);
+                rdVector_MultAcc3(&out, &scaledThrust, deltaSeconds);
             }
 
             if ( pThing->physicsParams.mass != 0.0 && (pThing->physicsParams.physflags & SITH_PF_USEGRAVITY) != 0 && (pThing->sector->flags & SITH_PF_USEGRAVITY) == 0 )
@@ -1025,7 +1037,9 @@ void sithPhysics_ThingPhysAttached(sithThing *pThing, flex_t deltaSeconds)
             }
             return;
         }
-        rdVector_MultAcc3(&vel_change, &pThing->sector->thrust, deltaSeconds);
+        rdVector3 scaledThrust;
+        rdVector_Scale3(&scaledThrust, &pThing->sector->thrust, sithPhysics_thrustScale);
+        rdVector_MultAcc3(&vel_change, &scaledThrust, deltaSeconds);
     }
     rdVector_Add3Acc(&pThing->physicsParams.vel, &vel_change);
     
@@ -1131,4 +1145,9 @@ void sithPhysics_ThingPhysAttached(sithThing *pThing, flex_t deltaSeconds)
             rdVector_MultAcc3(&pThing->physicsParams.velocityMaybe, &attachedNormal, -v131);
         }
     }
+}
+
+void sithPhysics_StartupVars()
+{
+    sithCvar_RegisterFlex("phys_thrustScale", 1.0, &sithPhysics_thrustScale, CVARFLAG_GLOBAL);
 }

@@ -6,6 +6,7 @@
 #include "Main/jkHud.h"
 #include "World/jkPlayer.h"
 #include "Platform/Common/stdUpdater.h"
+#include "Engine/sithPhysics.h"
 #include "stdPlatform.h"
 #include "jk.h"
 
@@ -31,6 +32,7 @@ int sithCvar_Startup()
 
     jkPlayer_StartupVars();
     stdUpdater_StartupCvars();
+    sithPhysics_StartupVars();
 
     sithCvar_LoadGlobals();
 
