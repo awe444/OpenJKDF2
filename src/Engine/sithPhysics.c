@@ -966,7 +966,7 @@ void sithPhysics_ThingPhysAttached(sithThing *pThing, flex_t deltaSeconds)
 
     if (pThing->physicsParams.mass != 0.0 && (pThing->sector->flags & SITH_SECTOR_HASTHRUST) && !(pThing->physicsParams.physflags & SITH_PF_NOTHRUST))
     {
-        if ( pThing->sector->thrust.z > sithWorld_pCurrentWorld->worldGravity * pThing->physicsParams.mass )
+        if ( pThing->sector->thrust.z * sithPhysics_thrustScale > sithWorld_pCurrentWorld->worldGravity * pThing->physicsParams.mass )
         {
             sithThing_DetachThing(pThing);
             rdVector_Zero3(&pThing->physicsParams.addedVelocity);
