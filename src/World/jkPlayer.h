@@ -149,6 +149,7 @@ extern flex_t jkPlayer_crosshairLineWidth;
 extern flex_t jkPlayer_crosshairScale;
 extern flex_t jkPlayer_canonicalCogTickrate;
 extern flex_t jkPlayer_canonicalPhysTickrate;
+extern flex_t jkPlayer_thrustScale; // Added: Global thrust scale factor for water current effects
 
 extern int jkPlayer_bEnableJkgm;
 extern int jkPlayer_bEnableTexturePrecache;

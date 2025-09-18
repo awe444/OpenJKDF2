@@ -57,6 +57,7 @@ flex_t jkPlayer_crosshairLineWidth = 1.0;
 flex_t jkPlayer_crosshairScale = 1.0;
 flex_t jkPlayer_canonicalCogTickrate = CANONICAL_COG_TICKRATE;
 flex_t jkPlayer_canonicalPhysTickrate = CANONICAL_PHYS_TICKRATE;
+flex_t jkPlayer_thrustScale = 1.0; // Added: Global thrust scale factor for water current effects
 
 int jkPlayer_setCrosshairOnLightsaber = 1;
 int jkPlayer_setCrosshairOnFist = 1;
@@ -184,6 +185,7 @@ void jkPlayer_StartupVars()
     sithCvar_RegisterBool("hud_disableWeaponWaggle",    0,                          &jkPlayer_bDisableWeaponWaggle,     CVARFLAG_LOCAL);
     sithCvar_RegisterFlex("g_canonicalCogTickrate",     CANONICAL_COG_TICKRATE,     &jkPlayer_canonicalCogTickrate,     CVARFLAG_LOCAL);
     sithCvar_RegisterFlex("g_canonicalPhysTickrate",    CANONICAL_PHYS_TICKRATE,    &jkPlayer_canonicalPhysTickrate,    CVARFLAG_LOCAL);
+    sithCvar_RegisterFlex("g_thrustScale",              1.0,                        &jkPlayer_thrustScale,              CVARFLAG_LOCAL); // Added: Global thrust scale factor
 
     sithCvar_RegisterBool("r_hidpi",                     0,                         &Window_isHiDpi_tmp,                CVARFLAG_LOCAL|CVARFLAG_READONLY);
     sithCvar_RegisterBool("r_fullscreen",                0,                         &Window_isFullscreen_tmp,           CVARFLAG_LOCAL|CVARFLAG_READONLY);
@@ -225,6 +227,7 @@ void jkPlayer_ResetVars()
     jkPlayer_crosshairScale = 1.0;
     jkPlayer_canonicalCogTickrate = CANONICAL_COG_TICKRATE;
     jkPlayer_canonicalPhysTickrate = CANONICAL_PHYS_TICKRATE;
+    jkPlayer_thrustScale = 1.0; // Added: Reset thrust scale factor
 
     jkPlayer_setCrosshairOnLightsaber = 1;
     jkPlayer_setCrosshairOnFist = 1;
