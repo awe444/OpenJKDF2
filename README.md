@@ -108,6 +108,12 @@ Contributions in the form of code cleanup and documentation are highly welcomed.
  - Load Configuration and Save Configuration in Setup > Controls > Options
  - Using plus or minus to resize the screen (with SDL2, resolution auto-resizes to window size)
 
+## Configuration Variables (CVars)
+OpenJKDF2 supports various configuration variables that can be modified via the in-game console or configuration files:
+
+### Physics Settings
+- `g_thrustScale` (default: 1.0) - Global scale factor for all water current/thrust effects. Set to 0.5 for half-strength currents, 2.0 for double-strength, etc.
+
 ## Usage with original JK.EXE and DirectX using hooks
 See [here](HOOKS.md) for instructions.
 
