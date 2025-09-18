@@ -227,6 +227,7 @@ void jkPlayer_ResetVars()
     jkPlayer_crosshairScale = 1.0;
     jkPlayer_canonicalCogTickrate = CANONICAL_COG_TICKRATE;
     jkPlayer_canonicalPhysTickrate = CANONICAL_PHYS_TICKRATE;
+    jkPlayer_sectorThrustScale = 1.0;
 
     jkPlayer_setCrosshairOnLightsaber = 1;
     jkPlayer_setCrosshairOnFist = 1;
@@ -572,6 +573,7 @@ void jkPlayer_WriteConf(wchar_t *name)
         stdJSON_SaveFloat(ext_fpath, "crosshairScale", jkPlayer_crosshairScale);
         stdJSON_SaveFloat(ext_fpath, "canonicalCogTickrate", jkPlayer_canonicalCogTickrate);
         stdJSON_SaveFloat(ext_fpath, "canonicalPhysTickrate", jkPlayer_canonicalPhysTickrate);
+        stdJSON_SaveFloat(ext_fpath, "sectorThrustScale", jkPlayer_sectorThrustScale);
 
         stdJSON_SaveBool(ext_fpath, "bUseOldPlayerPhysics", jkPlayer_bUseOldPlayerPhysics);
 
@@ -767,6 +769,7 @@ int jkPlayer_ReadConf(wchar_t *name)
         jkPlayer_crosshairScale = stdJSON_GetFloat(ext_fpath, "crosshairScale", jkPlayer_crosshairScale);
         jkPlayer_canonicalCogTickrate = stdJSON_GetFloat(ext_fpath, "canonicalCogTickrate", jkPlayer_canonicalCogTickrate);
         jkPlayer_canonicalPhysTickrate = stdJSON_GetFloat(ext_fpath, "canonicalPhysTickrate", jkPlayer_canonicalPhysTickrate);
+        jkPlayer_sectorThrustScale = stdJSON_GetFloat(ext_fpath, "sectorThrustScale", jkPlayer_sectorThrustScale);
 
         jkPlayer_bUseOldPlayerPhysics = stdJSON_GetBool(ext_fpath, "bUseOldPlayerPhysics", jkPlayer_bUseOldPlayerPhysics);
 
