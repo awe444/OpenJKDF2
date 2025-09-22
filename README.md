@@ -122,6 +122,23 @@ Progress is tracked using `analyze.py`, `output.map` and `ida_copypaste_funclist
 
 If you'd like a copy of my IDB to examine functions which haven't been decompiled yet (or for any other use), let me know.
 
+## Configuration
+
+OpenJKDF2 includes several cvars (configuration variables) that can be set in the console or configuration files to customize gameplay:
+
+### Timer Control
+- `g_timerMultiplier` - Multiplies all COG timer durations (default: 1.0)
+  - Set to 0.5 for 2x faster timers/cutscenes
+  - Set to 2.0 for 2x slower timers
+  - See [TIMER_MULTIPLIER.md](docs/TIMER_MULTIPLIER.md) for detailed usage
+
+### Graphics and Display
+- `r_fov` - Field of view setting (default: 90)
+- `r_gamma` - Gamma correction (default: 1.0)
+- `hud_scale` - HUD scaling factor (default: 2.0)
+
+For a complete list of available cvars, use the console command `cvarlist` in-game.
+
 ## Current Progress
 
 Generated using `analyze.py`. Some filenames may be inaccurate or incomplete (see `ida_copypaste_funclist_nostdlib.txt` for a full function name listing).
