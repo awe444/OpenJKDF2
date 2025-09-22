@@ -23,6 +23,7 @@
 #include "Dss/sithGamesave.h"
 #include "Gameplay/sithEvent.h"
 #include "Engine/sithPhysics.h"
+#include "World/jkPlayer.h"
 #include "Gameplay/sithPlayer.h"
 #include "World/sithWorld.h"
 #include "World/sithWeapon.h"
@@ -337,8 +338,8 @@ void sithCogFunction_SetPulse(sithCog *ctx)
 #endif
         }
         ctx->flags |= SITH_COG_PULSE_SET;
-        ctx->pulsePeriodMs = (int)(popFlex * 1000.0);
-        ctx->nextPulseMs = (int)(popFlex * 1000.0) + sithTime_curMs;
+        ctx->pulsePeriodMs = (int)(popFlex * jkPlayer_timerMultiplier * 1000.0);
+        ctx->nextPulseMs = (int)(popFlex * jkPlayer_timerMultiplier * 1000.0) + sithTime_curMs;
     }
 }
 
@@ -366,7 +367,7 @@ void sithCogFunction_SetTimer(sithCog *ctx)
 #endif
         }
         ctx->flags |= SITH_COG_TIMER_SET;
-        ctx->field_20 = sithTime_curMs + (int)(popFlex * 1000.0);
+        ctx->field_20 = sithTime_curMs + (int)(popFlex * jkPlayer_timerMultiplier * 1000.0);
     }
 }
 
@@ -378,7 +379,7 @@ void sithCogFunction_SetTimerEx(sithCog *ctx)
     timerInfo.field_10 = sithCogExec_PopFlex(ctx);
     timerInfo.timerIdx = sithCogExec_PopInt(ctx);
     timerInfo.cogIdx = ctx->selfCog;
-    cog_flex_t a1a = sithCogExec_PopFlex(ctx) * 1000.0;
+    cog_flex_t a1a = sithCogExec_PopFlex(ctx) * jkPlayer_timerMultiplier * 1000.0;
     int timerMs = (signed int)a1a;
     if ( timerMs >= 0 ) {
         sithEvent_Set(4, &timerInfo, timerMs);
