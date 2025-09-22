@@ -603,7 +603,7 @@ void sithCogFunctionThing_SetThingPulse(sithCog *ctx)
     else
     {
         pThing->thingflags |= SITH_TF_PULSE;
-        pThing->pulse_ms = (int)(pulseSecs * 1000.0);
+        pThing->pulse_ms = (int)(pulseSecs * jkPlayer_timerMultiplier * 1000.0);
         pThing->pulse_end_ms = pThing->pulse_ms + sithTime_curMs;
     }
 }
@@ -623,7 +623,7 @@ void sithCogFunctionThing_SetThingTimer(sithCog *ctx)
     else
     {
         pThing->thingflags |= SITH_TF_TIMER;
-        pThing->timer = sithTime_curMs + (uint32_t)(timerSecs * 1000.0);
+        pThing->timer = sithTime_curMs + (uint32_t)(timerSecs * jkPlayer_timerMultiplier * 1000.0);
     }
 }
 
