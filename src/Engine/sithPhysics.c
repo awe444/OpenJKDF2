@@ -516,9 +516,11 @@ void sithPhysics_ThingPhysGeneral(sithThing *pThing, flex_t deltaSeconds)
         && (pThing->sector->flags & SITH_SECTOR_HASTHRUST) 
         && !(pThing->physicsParams.physflags & SITH_PF_NOTHRUST))
     {
-        // Apply configurable sector thrust scale factor to lessen water current effects
+        // Apply configurable sector thrust scale factors: horizontal (x/y) and vertical (z)
         rdVector3 scaledThrust;
-        rdVector_Scale3(&scaledThrust, &pThing->sector->thrust, jkPlayer_sectorThrustScale);
+        scaledThrust.x = pThing->sector->thrust.x * jkPlayer_sectorThrustScaleH;
+        scaledThrust.y = pThing->sector->thrust.y * jkPlayer_sectorThrustScaleH;
+        scaledThrust.z = pThing->sector->thrust.z * jkPlayer_sectorThrustScaleV;
         rdVector_MultAcc3(&a1a, &scaledThrust, deltaSeconds);
     }
 
@@ -662,9 +664,11 @@ void sithPhysics_ThingPhysPlayer(sithThing *player, flex_t deltaSeconds)
             if ((player->sector->flags & SITH_SECTOR_HASTHRUST)
                 && !(player->physicsParams.physflags & SITH_PF_NOTHRUST))
             {
-                // Apply configurable sector thrust scale factor to lessen water current effects
+                // Apply configurable sector thrust scale factors: horizontal (x/y) and vertical (z)
                 rdVector3 scaledThrust;
-                rdVector_Scale3(&scaledThrust, &player->sector->thrust, jkPlayer_sectorThrustScale);
+                scaledThrust.x = player->sector->thrust.x * jkPlayer_sectorThrustScaleH;
+                scaledThrust.y = player->sector->thrust.y * jkPlayer_sectorThrustScaleH;
+                scaledThrust.z = player->sector->thrust.z * jkPlayer_sectorThrustScaleV;
                 rdVector_MultAcc3(&a1a, &scaledThrust, OLDSTEP_DELTA_50FPS);
             }
         }
@@ -733,9 +737,11 @@ void sithPhysics_ThingPhysUnderwater(sithThing *pThing, flex_t deltaSeconds)
     }
     if ( pThing->physicsParams.mass != 0.0 && pThing->sector && (pThing->sector->flags & SITH_SECTOR_HASTHRUST) && !(pThing->physicsParams.physflags & SITH_PF_NOTHRUST) )
     {
-        // Apply configurable sector thrust scale factor to lessen water current effects
+        // Apply configurable sector thrust scale factors: horizontal (x/y) and vertical (z)
         rdVector3 scaledThrust;
-        rdVector_Scale3(&scaledThrust, &pThing->sector->thrust, jkPlayer_sectorThrustScale);
+        scaledThrust.x = pThing->sector->thrust.x * jkPlayer_sectorThrustScaleH;
+        scaledThrust.y = pThing->sector->thrust.y * jkPlayer_sectorThrustScaleH;
+        scaledThrust.z = pThing->sector->thrust.z * jkPlayer_sectorThrustScaleV;
         rdVector_MultAcc3(&a1a, &scaledThrust, deltaSeconds);
     }
 
@@ -966,7 +972,7 @@ void sithPhysics_ThingPhysAttached(sithThing *pThing, flex_t deltaSeconds)
     if (pThing->physicsParams.mass != 0.0 && (pThing->sector->flags & SITH_SECTOR_HASTHRUST) && !(pThing->physicsParams.physflags & SITH_PF_NOTHRUST))
     {
         // Check if scaled thrust is strong enough to lift the object
-        if ( pThing->sector->thrust.z * jkPlayer_sectorThrustScale > sithWorld_pCurrentWorld->worldGravity * pThing->physicsParams.mass )
+        if ( pThing->sector->thrust.z * jkPlayer_sectorThrustScaleV > sithWorld_pCurrentWorld->worldGravity * pThing->physicsParams.mass )
         {
             sithThing_DetachThing(pThing);
             rdVector_Zero3(&pThing->physicsParams.addedVelocity);
@@ -1016,9 +1022,11 @@ void sithPhysics_ThingPhysAttached(sithThing *pThing, flex_t deltaSeconds)
               && (pThing->sector->flags & SITH_SECTOR_HASTHRUST)
               && !(pThing->physicsParams.physflags & SITH_PF_NOTHRUST))
             {
-                // Apply configurable sector thrust scale factor to lessen water current effects
+                // Apply configurable sector thrust scale factors: horizontal (x/y) and vertical (z)
                 rdVector3 scaledThrust;
-                rdVector_Scale3(&scaledThrust, &pThing->sector->thrust, jkPlayer_sectorThrustScale);
+                scaledThrust.x = pThing->sector->thrust.x * jkPlayer_sectorThrustScaleH;
+                scaledThrust.y = pThing->sector->thrust.y * jkPlayer_sectorThrustScaleH;
+                scaledThrust.z = pThing->sector->thrust.z * jkPlayer_sectorThrustScaleV;
                 rdVector_MultAcc3(&out, &scaledThrust, deltaSeconds);
             }
 
@@ -1038,9 +1046,11 @@ void sithPhysics_ThingPhysAttached(sithThing *pThing, flex_t deltaSeconds)
             }
             return;
         }
-        // Apply configurable sector thrust scale factor to lessen water current effects
+        // Apply configurable sector thrust scale factors: horizontal (x/y) and vertical (z)
         rdVector3 scaledThrust;
-        rdVector_Scale3(&scaledThrust, &pThing->sector->thrust, jkPlayer_sectorThrustScale);
+        scaledThrust.x = pThing->sector->thrust.x * jkPlayer_sectorThrustScaleH;
+        scaledThrust.y = pThing->sector->thrust.y * jkPlayer_sectorThrustScaleH;
+        scaledThrust.z = pThing->sector->thrust.z * jkPlayer_sectorThrustScaleV;
         rdVector_MultAcc3(&vel_change, &scaledThrust, deltaSeconds);
     }
     rdVector_Add3Acc(&pThing->physicsParams.vel, &vel_change);

@@ -149,7 +149,8 @@ extern flex_t jkPlayer_crosshairLineWidth;
 extern flex_t jkPlayer_crosshairScale;
 extern flex_t jkPlayer_canonicalCogTickrate;
 extern flex_t jkPlayer_canonicalPhysTickrate;
-extern flex_t jkPlayer_sectorThrustScale;  // Scale factor for sector thrust (water current) effects, default 1.0
+extern flex_t jkPlayer_sectorThrustScaleH;  // Scale factor for sector thrust horizontal (x/y) effects, default 1.0
+extern flex_t jkPlayer_sectorThrustScaleV;  // Scale factor for sector thrust vertical (z) effects, default 1.0
 extern flex_t jkPlayer_timerMultiplier;  // Multiplier for COG timer durations, default 1.0
 
 extern int jkPlayer_bEnableJkgm;
