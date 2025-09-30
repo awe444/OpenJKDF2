@@ -149,7 +149,8 @@ extern flex_t jkPlayer_crosshairLineWidth;
 extern flex_t jkPlayer_crosshairScale;
 extern flex_t jkPlayer_canonicalCogTickrate;
 extern flex_t jkPlayer_canonicalPhysTickrate;
-extern flex_t jkPlayer_sectorThrustScale;  // Scale factor for sector thrust (water current) effects, default 1.0
+extern flex_t jkPlayer_sectorThrustScaleHorz; // Horizontal (x/y) thrust scale, default 1.0
+extern flex_t jkPlayer_sectorThrustScaleVert; // Vertical (z) thrust scale, default 1.0
 extern flex_t jkPlayer_timerMultiplier;  // Multiplier for COG timer durations, default 1.0
 
 extern int jkPlayer_bEnableJkgm;
@@ -192,6 +193,5 @@ extern int jkPlayer_bJankyPhysics;
 //static int (*jkPlayer_DisallowOtherSide)() = (void*)jkPlayer_DisallowOtherSide_ADDR;
 //static void (*jkPlayer_SetChoice)(signed int a1) = (void*)jkPlayer_SetChoice_ADDR;
 //static double (*jkPlayer_CalcAlignment)(flex_t a1) = (void*)jkPlayer_CalcAlignment_ADDR;
-//static void (__cdecl *jkPlayer_renderSaberTwinkle)(sithThing *a1) = (void*)jkPlayer_renderSaberTwinkle_ADDR;
 
 #endif // _JK_PLAYER_H
